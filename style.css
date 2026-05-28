@@ -1096,14 +1096,32 @@ body { background: var(--t-bg) !important; }
 }
 .default-set-btn:hover{opacity:1;border-color:var(--text-sub);}
 
-/* 기본값 설정 모드 — 항목에 체크박스 표시 */
+/* 기본값 설정 모드 — 항목에 체크박스 + 드래그 핸들 표시 */
 .default-mode-item{
   display:flex;align-items:center;gap:8px;
   background:#FFFDE7;border-radius:8px;
+  transition:opacity .15s,box-shadow .15s;
 }
 .default-chk{
   accent-color:#F9A825;width:15px;height:15px;
   flex-shrink:0;cursor:pointer;
+}
+/* 드래그 핸들 */
+.dm-handle{
+  cursor:grab;color:#BDBDBD;font-size:20px;flex-shrink:0;
+  padding:0 2px;touch-action:none;user-select:none;line-height:1;
+  transition:color .1s;
+}
+.dm-handle:hover{color:#F9A825;}
+.dm-handle:active{cursor:grabbing;}
+/* 드래그 중 상태 */
+.dm-dragging{
+  opacity:0.35;box-shadow:0 4px 16px rgba(0,0,0,.12);
+}
+/* 드롭 대상 강조 */
+.dm-drag-over{
+  outline:2px dashed #F9A825;outline-offset:-2px;
+  background:#FFF8DC !important;
 }
 
 /* ===== 식비 캘린더 모바일 가독성 ===== */
