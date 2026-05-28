@@ -213,7 +213,9 @@
               <div class="fc-amount-label">현재 보유 금액</div>
               <div class="fc-amount-row">
                 <input type="number" id="fc-amount-input" class="fc-amount-input" placeholder="0"
-                  oninput="App.setFundAmount(this.value)"/>
+                  oninput="App.previewFundAmount(this.value)"
+                  onchange="App.setFundAmount(this.value)"
+                  onkeydown="if(event.key==='Enter')App.setFundAmount(this.value)"/>
                 <span class="fc-amount-unit">원</span>
                 <button class="add-btn" onclick="App.toggleAssetSelector()" style="white-space:nowrap;flex-shrink:0;">🏦 자산</button>
               </div>
