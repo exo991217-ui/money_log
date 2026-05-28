@@ -2665,9 +2665,9 @@ function renderLedger(){
         ${items.map(e=>{
           const cc=getCategoryColor(e.category);
           const tagPills=(e.tags&&e.tags.length>0)?e.tags.map(t=>{const col=getTagColorForCategory(e.category);return `<span class="ledger-tag-pill" style="--tag-bg:${col.bg};--tag-color:${col.color};" onclick="App.setTagFilter('${t}')">#${t}</span>`;}).join(''):'';
-          const creditBadge=e.creditAutoId?`<span class="ledger-credit-auto-badge" style="--cat-strip:${cc.strip};">💳</span>`:'';
+          const creditBadge=e.creditAutoId?`<span class="ledger-credit-auto-badge" style="--cat-strip:${cc.strip};">💳 신용카드 자동</span>`:'';
           const savingsBadge=(e.tags||[]).includes('저축')?`<span class="ledger-savings-badge">♥저축</span>`:'';
-          const autoLedgerBadge=e.autoLedgerId?`<span class="ledger-auto-ledger-badge">⚡</span>`:'';
+          const autoLedgerBadge=e.autoLedgerId?`<span class="ledger-auto-ledger-badge">⚡ 자동화</span>`:'';
           return `
           <div class="ledger-entry ${e.type}" style="--cat-strip:${cc.strip};--cat-bg:${cc.bg};--cat-color:${cc.color};">
             <div class="ledger-cat-strip"></div>
@@ -2677,6 +2677,8 @@ function renderLedger(){
                 <span class="ledger-memo">${e.memo||'—'}</span>
                 ${tagPills}
               </div>
+            </div>
+            <div class="ledger-entry-mid">
               ${creditBadge}${savingsBadge}${autoLedgerBadge}
             </div>
             <div class="ledger-entry-right">
