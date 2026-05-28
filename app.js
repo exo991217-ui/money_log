@@ -404,9 +404,6 @@ function getCardTotalRemaining(card){
   const monthly=Math.ceil(card.amount/card.months);
   return card.amount-(card.paidMonths||[]).length*monthly;
 }
-function getCardTotalPaid(card){
-  return (card.paidMonths||[]).length*Math.ceil(card.amount/card.months);
-}
 
 function getLedgerCategorySums(y,m){
   const key=mkey(y,m);
@@ -665,9 +662,6 @@ function deleteBudgetCategory(id){
   saveState();renderBudget(cm.y,cm.m);
 }
 
-function toggleBudgetSync(checked){
-  // Legacy: no-op (now per-category via openBudgetModal)
-}
 
 // ===== REMAINING BUDGET =====
 function saveRemainingBudget(val){
@@ -1173,47 +1167,33 @@ function renderIncome(){
   const isDefaultFixed=item=>curDefFixed.some(d=>d.name===item.name&&d.amount===item.amount);
 
   // Income list
-  document.getElementById('income-list').innerHTML=data.income.map(item=>`
-    <div class="expense-item${_defaultMode?' default-mode-item':''}"${_defaultMode?` data-drag-id="${item.id}" draggable="true"
-      ondragstart="App._dmDragStart(event,'income',${item.id})"
-      ondragover="App._dmDragOver(event,'income')"
-      ondragleave="App._dmDragLeave(event)"
-      ondrop="App._dmDrop(event,'income',${item.id})"
-      ondragend="App._dmDragEnd(event)`:''}>
-      ${_defaultMode?`<span class="dm-handle" ontouchstart="App._dmTouchStart(event,'income-list')">⠿</span>
-      <input type="checkbox" class="default-chk default-chk-income" value="${item.id}" ${isDefaultIncome(item)?'checked':''}>`:''}
+  document.getElementById('income-list').innerHTML=data.income.map(item=>{
+    const da=_defaultMode?` data-drag-id="${item.id}" draggable="true" ondragstart="App._dmDragStart(event,'income',${item.id})" ondragover="App._dmDragOver(event,'income')" ondragleave="App._dmDragLeave(event)" ondrop="App._dmDrop(event,'income',${item.id})" ondragend="App._dmDragEnd(event)"`:'';
+    return `<div class="expense-item${_defaultMode?' default-mode-item':''}"${da}>
+      ${_defaultMode?`<span class="dm-handle" ontouchstart="App._dmTouchStart(event,'income-list')">⠿</span><input type="checkbox" class="default-chk default-chk-income" value="${item.id}" ${isDefaultIncome(item)?'checked':''}>`:''}
       <div class="item-left"><span class="item-name">${item.name}</span><span class="item-cat">${item.category}</span></div>
       <div class="item-right">
         <span class="item-amount green">${fmt(item.amount)}</span>
-        ${_defaultMode?'':` <div class="item-actions">
-          <button class="icon-btn" onclick="App.editItem('income',${item.id})">✏️</button>
-          <button class="icon-btn" onclick="App.deleteItem('income',${item.id})">🗑️</button>
-        </div>`}
+        ${_defaultMode?'':`<div class="item-actions"><button class="icon-btn" onclick="App.editItem('income',${item.id})">✏️</button><button class="icon-btn" onclick="App.deleteItem('income',${item.id})">🗑️</button></div>`}
       </div>
-    </div>`).join('')||(data.income.length===0&&_defaultMode?'<div style="font-size:12px;color:var(--text-sub);padding:8px 0;">수입 항목이 없습니다</div>':'');
+    </div>`;
+  }).join('')||(data.income.length===0&&_defaultMode?'<div style="font-size:12px;color:var(--text-sub);padding:8px 0;">수입 항목이 없습니다</div>':'');
 
   // Fixed list (with isSavings badge)
-  document.getElementById('fixed-list').innerHTML=data.fixed.map(item=>`
-    <div class="expense-item${_defaultMode?' default-mode-item':''}"${_defaultMode?` data-drag-id="${item.id}" draggable="true"
-      ondragstart="App._dmDragStart(event,'fixed',${item.id})"
-      ondragover="App._dmDragOver(event,'fixed')"
-      ondragleave="App._dmDragLeave(event)"
-      ondrop="App._dmDrop(event,'fixed',${item.id})"
-      ondragend="App._dmDragEnd(event)`:''}>
-      ${_defaultMode?`<span class="dm-handle" ontouchstart="App._dmTouchStart(event,'fixed-list')">⠿</span>
-      <input type="checkbox" class="default-chk default-chk-fixed" value="${item.id}" ${isDefaultFixed(item)?'checked':''}>`:''}
+  document.getElementById('fixed-list').innerHTML=data.fixed.map(item=>{
+    const da=_defaultMode?` data-drag-id="${item.id}" draggable="true" ondragstart="App._dmDragStart(event,'fixed',${item.id})" ondragover="App._dmDragOver(event,'fixed')" ondragleave="App._dmDragLeave(event)" ondrop="App._dmDrop(event,'fixed',${item.id})" ondragend="App._dmDragEnd(event)"`:'';
+    return `<div class="expense-item${_defaultMode?' default-mode-item':''}"${da}>
+      ${_defaultMode?`<span class="dm-handle" ontouchstart="App._dmTouchStart(event,'fixed-list')">⠿</span><input type="checkbox" class="default-chk default-chk-fixed" value="${item.id}" ${isDefaultFixed(item)?'checked':''}>`:''}
       <div class="item-left">
         <span class="item-name">${item.name}${item.isSavings?'<span class="savings-tag">💜저축</span>':''}</span>
         <span class="item-cat">${item.category}</span>
       </div>
       <div class="item-right">
         <span class="item-amount ${item.isSavings?'purple':'red'}">${fmt(item.amount)}</span>
-        ${_defaultMode?'':` <div class="item-actions">
-          <button class="icon-btn" onclick="App.editItem('fixed',${item.id})">✏️</button>
-          <button class="icon-btn" onclick="App.deleteItem('fixed',${item.id})">🗑️</button>
-        </div>`}
+        ${_defaultMode?'':`<div class="item-actions"><button class="icon-btn" onclick="App.editItem('fixed',${item.id})">✏️</button><button class="icon-btn" onclick="App.deleteItem('fixed',${item.id})">🗑️</button></div>`}
       </div>
-    </div>`).join('')||(data.fixed.length===0&&_defaultMode?'<div style="font-size:12px;color:var(--text-sub);padding:8px 0;">고정 지출 항목이 없습니다</div>':'');
+    </div>`;
+  }).join('')||(data.fixed.length===0&&_defaultMode?'<div style="font-size:12px;color:var(--text-sub);padding:8px 0;">고정 지출 항목이 없습니다</div>':'');
 
   // Variable list
   const effectiveVars=getEffectiveVariable(cm.y,cm.m);
@@ -3754,34 +3734,6 @@ function exportToCSV(){
   document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
 }
 
-// ===== ZIP DOWNLOAD =====
-async function downloadZip(){
-  // Load JSZip from CDN
-  if(!window.JSZip){
-    await new Promise((resolve,reject)=>{
-      const s=document.createElement('script');
-      s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-      s.onload=resolve;s.onerror=reject;
-      document.head.appendChild(s);
-    });
-  }
-  const zip=new window.JSZip();
-  // Fetch the 3 files
-  try{
-    const [htmlRes,jsRes,cssRes]=await Promise.all([
-      fetch('index.html'),fetch('app.js'),fetch('style.css')
-    ]);
-    zip.file('index.html',await htmlRes.text());
-    zip.file('app.js',await jsRes.text());
-    zip.file('style.css',await cssRes.text());
-    const blob=await zip.generateAsync({type:'blob'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download='가계부_'+new Date().toISOString().slice(0,10)+'.zip';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-  }catch(e){alert('ZIP 다운로드 실패: '+e.message);}
-}
-
 
 // ===== MONTHLY DATA DELETE =====
 function openDeleteModal(){
@@ -3926,7 +3878,6 @@ window.App={
   renderFundCalc,setFundAmount,addFundItem,deleteFundItem,updateFundItem,
   previewFundItem,previewFundAmount,
   resetFundCalc,toggleAssetSelector,applyAssetSelection,
-  toggleBudgetSync,
   addLcatEntry,deleteLcatEntry,toggleLcatSavings,saveLcatName,toggleLcatPanel,
   openDeleteModal,confirmDeleteMonth,deleteMonthData,
   numInputFmt,numInputParse,
