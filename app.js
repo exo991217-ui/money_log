@@ -49,13 +49,17 @@ const DEFAULT_DATA=()=>({
   defaultItems:{income:[],fixed:[]},
   calFoodSync:{},
   ledgerCategories:[
-    {id:1,name:'식비',isSavings:false},
-    {id:2,name:'생활',isSavings:false},
-    {id:3,name:'주거/공과',isSavings:false},
-    {id:4,name:'교통',isSavings:false},
-    {id:5,name:'문화/여가',isSavings:false},
-    {id:6,name:'저축/투자',isSavings:true},
-    {id:7,name:'기타',isSavings:false},
+    {id:1,name:'🍚 식비',isSavings:false},
+    {id:2,name:'🧴 생활용품',isSavings:false},
+    {id:3,name:'🏠 주거·공과금',isSavings:false},
+    {id:4,name:'🚗 교통·차량',isSavings:false},
+    {id:5,name:'💪 건강',isSavings:false},
+    {id:6,name:'🎨 문화·취미',isSavings:false},
+    {id:7,name:'👕 패션·미용',isSavings:false},
+    {id:8,name:'💰 금융',isSavings:false},
+    {id:9,name:'✈ 여행',isSavings:false},
+    {id:10,name:'🎁 경조사',isSavings:false},
+    {id:11,name:'📦 기타',isSavings:false},
   ],
 });
 
@@ -118,6 +122,23 @@ function loadState(){
           {id:7,name:'기타',isSavings:false},
         ];
         S._lcat_reset_v1=true;
+      }
+      // 가계부 카테고리 이모지 버전으로 재설정 (v2: 11개 이모지 카테고리)
+      if(!S._lcat_reset_v2){
+        S.ledgerCategories=[
+          {id:1,name:'🍚 식비',isSavings:false},
+          {id:2,name:'🧴 생활용품',isSavings:false},
+          {id:3,name:'🏠 주거·공과금',isSavings:false},
+          {id:4,name:'🚗 교통·차량',isSavings:false},
+          {id:5,name:'💪 건강',isSavings:false},
+          {id:6,name:'🎨 문화·취미',isSavings:false},
+          {id:7,name:'👕 패션·미용',isSavings:false},
+          {id:8,name:'💰 금융',isSavings:false},
+          {id:9,name:'✈ 여행',isSavings:false},
+          {id:10,name:'🎁 경조사',isSavings:false},
+          {id:11,name:'📦 기타',isSavings:false},
+        ];
+        S._lcat_reset_v2=true;
       }
       S.stocks=S.stocks.map(st=>{
         const isKrTicker=/^\d{6}$/.test(st.ticker);
@@ -213,6 +234,23 @@ window.FB_MERGE = function(fbData) {
     if(S.stockAssetDirect===undefined)S.stockAssetDirect=false;
     if(S.stockAssetAutoId===undefined)S.stockAssetAutoId=null;
     if(!S.calFoodSync)S.calFoodSync={};
+    // 가계부 카테고리 이모지 버전으로 재설정 (v2)
+    if(!S._lcat_reset_v2){
+      S.ledgerCategories=[
+        {id:1,name:'🍚 식비',isSavings:false},
+        {id:2,name:'🧴 생활용품',isSavings:false},
+        {id:3,name:'🏠 주거·공과금',isSavings:false},
+        {id:4,name:'🚗 교통·차량',isSavings:false},
+        {id:5,name:'💪 건강',isSavings:false},
+        {id:6,name:'🎨 문화·취미',isSavings:false},
+        {id:7,name:'👕 패션·미용',isSavings:false},
+        {id:8,name:'💰 금융',isSavings:false},
+        {id:9,name:'✈ 여행',isSavings:false},
+        {id:10,name:'🎁 경조사',isSavings:false},
+        {id:11,name:'📦 기타',isSavings:false},
+      ];
+      S._lcat_reset_v2=true;
+    }
     // 예산 카테고리 강제 리셋
     if(!S._budget_reset_v2){
       S.budgetCategories=[
@@ -369,8 +407,24 @@ function getEffectiveVariable(y,m){
   const ledgerSums=getLedgerCategorySums(y,m);
   const ledgerCats=Object.keys(ledgerSums);
 
-  // Credit auto items: include as-is (no ledger sync — each installment is its own amount)
-  const creditItems=(data.variable||[]).filter(item=>item.autoFromCredit);
+  // Credit auto items: look up actual category from ledger entry (user may have edited it)
+  const key=mkey(y,m);
+  const ledgerEntries=S.ledger[key]||[];
+  const creditAutoItems=(data.variable||[]).filter(item=>item.autoFromCredit);
+  // Merge credit items by their actual ledger category
+  const creditCatMap={};
+  creditAutoItems.forEach(item=>{
+    const ledEntry=ledgerEntries.find(e=>e.creditAutoId===item.creditAutoId);
+    const cat=ledEntry?ledEntry.category:(item.category||'신용카드');
+    creditCatMap[cat]=(creditCatMap[cat]||0)+(parseFloat(item.amount)||0);
+  });
+  const creditItems=Object.entries(creditCatMap).map(([cat,amt])=>({
+    id:'credit_cat_'+cat,
+    name:cat,
+    category:cat,
+    amount:amt,
+    autoFromCredit:true
+  }));
 
   // Manual items (no autoFromFood, no autoFromCredit, sync ledger amounts for all categories including 식비)
   const manual=(data.variable||[]).filter(item=>!item.autoFromFood&&!item.autoFromCredit&&item.name!=='커피+샐러드').map(item=>{
@@ -388,8 +442,9 @@ function getEffectiveVariable(y,m){
   // Ledger-only items (exclude credit auto entries; include 식비)
   const manualCats=new Set(manual.map(i=>i.category));
   const autoCats=new Set(autoItems.map(i=>i.category));
+  const creditCats=new Set(creditItems.map(i=>i.category));
   const ledgerItems=ledgerCats
-    .filter(cat=>!manualCats.has(cat)&&!autoCats.has(cat)&&ledgerSums[cat]>0)
+    .filter(cat=>!manualCats.has(cat)&&!autoCats.has(cat)&&!creditCats.has(cat)&&ledgerSums[cat]>0)
     .map(cat=>({id:'led_'+cat,name:cat,category:cat,amount:ledgerSums[cat],autoFromLedger:true}));
 
   return[...manual,...autoItems,...ledgerItems,...creditItems];
@@ -1176,6 +1231,19 @@ function renderCredit(){
   if(S.creditCards.length===0){
     list.innerHTML=`<div class="card" style="text-align:center;padding:50px;color:var(--text-sub);"><div style="font-size:40px;margin-bottom:12px;">💳</div><div style="font-weight:600;">등록된 대금이 없어요</div></div>`;
     return;
+  }
+  // 이번 달 일괄 결제 완료 버튼 표시
+  const dueCards=S.creditCards.filter(c=>isCardDueInMonth(c,cm.y,cm.m));
+  const allPaidThisMonth=dueCards.length>0&&dueCards.every(c=>(c.paidMonths||[]).includes(mkey(cm.y,cm.m)));
+  const bulkBtnEl=document.getElementById('credit-bulk-pay-btn');
+  if(bulkBtnEl){
+    if(dueCards.length>0){
+      bulkBtnEl.style.display='';
+      bulkBtnEl.textContent=allPaidThisMonth?'✅ 결제 완료 해제':'✅ 이번 달 모두 결제 완료';
+      bulkBtnEl.className='add-btn '+(allPaidThisMonth?'green-btn':'primary');
+    } else {
+      bulkBtnEl.style.display='none';
+    }
   }
   // Group by card name
   const cardGroups={};
@@ -2075,7 +2143,7 @@ function saveCredit(){
   const months=parseInt(document.getElementById('mc-months').value)||1;
   const startYear=parseInt(document.getElementById('mc-start-year').value)||2026;
   const startMonth=parseInt(document.getElementById('mc-start-month').value)||1;
-  const startDay=parseInt(document.getElementById('mc-start-day').value)||1;
+  const startDay=parseInt(document.getElementById('mc-start-day').value)||new Date().getDate();
   if(!item||amount<=0)return alert('항목명과 금액을 입력해주세요');
   const cardName=S.cardSettings.find(c=>c.id==cardSelId)?.name||'카드';
   if(editId){
@@ -2305,6 +2373,23 @@ function deleteCredit(id){
     }
   }
   S.creditCards=S.creditCards.filter(c=>c.id!=id);
+  saveState();renderCredit();renderIncome();renderDashboard();renderLedger();
+}
+
+function markAllCreditPaidThisMonth(){
+  const cm=S.currentMonths.credit;
+  const key=mkey(cm.y,cm.m);
+  const dueCards=S.creditCards.filter(c=>isCardDueInMonth(c,cm.y,cm.m));
+  if(dueCards.length===0)return;
+  const allPaid=dueCards.every(c=>(c.paidMonths||[]).includes(key));
+  dueCards.forEach(card=>{
+    if(!card.paidMonths)card.paidMonths=[];
+    if(!allPaid){
+      if(!card.paidMonths.includes(key))card.paidMonths.push(key);
+    } else {
+      card.paidMonths=card.paidMonths.filter(m=>m!==key);
+    }
+  });
   saveState();renderCredit();renderIncome();renderDashboard();renderLedger();
 }
 
@@ -2707,14 +2792,25 @@ const TAG_PALETTE=[
 
 // ===== 가계부 카테고리 색상 팔레트 =====
 const LEDGER_CAT_COLORS={
-  '식비':    {strip:'#FF6B6B',bg:'#FFF0F0',color:'#C0392B'},
-  '생활':    {strip:'#FFA94D',bg:'#FFF5E6',color:'#D4620A'},
-  '주거/공과':{strip:'#74B9FF',bg:'#EBF5FF',color:'#1565C0'},
-  '교통':    {strip:'#55EFC4',bg:'#E0FFF6',color:'#007B60'},
-  '문화/여가':{strip:'#A29BFE',bg:'#F0EEFF',color:'#6C5CE7'},
-  '저축/투자':{strip:'#FDCB6E',bg:'#FFFBE6',color:'#B07C00'},
-  '기타':    {strip:'#B2BEC3',bg:'#F4F6F8',color:'#636E72'},
-  '신용카드': {strip:'#6C5CE7',bg:'#F0EEFF',color:'#4834d4'},
+  '식비':        {strip:'#FF6B6B',bg:'#FFF0F0',color:'#C0392B'},
+  '생활':        {strip:'#FFA94D',bg:'#FFF5E6',color:'#D4620A'},
+  '주거/공과':   {strip:'#74B9FF',bg:'#EBF5FF',color:'#1565C0'},
+  '교통':        {strip:'#55EFC4',bg:'#E0FFF6',color:'#007B60'},
+  '문화/여가':   {strip:'#A29BFE',bg:'#F0EEFF',color:'#6C5CE7'},
+  '저축/투자':   {strip:'#FDCB6E',bg:'#FFFBE6',color:'#B07C00'},
+  '기타':        {strip:'#B2BEC3',bg:'#F4F6F8',color:'#636E72'},
+  '신용카드':    {strip:'#6C5CE7',bg:'#F0EEFF',color:'#4834d4'},
+  '🍚 식비':    {strip:'#FF6B6B',bg:'#FFF0F0',color:'#C0392B'},
+  '🧴 생활용품': {strip:'#FFA94D',bg:'#FFF5E6',color:'#D4620A'},
+  '🏠 주거·공과금':{strip:'#74B9FF',bg:'#EBF5FF',color:'#1565C0'},
+  '🚗 교통·차량': {strip:'#55EFC4',bg:'#E0FFF6',color:'#007B60'},
+  '💪 건강':    {strip:'#43C98A',bg:'#E8F5EE',color:'#2E8B57'},
+  '🎨 문화·취미': {strip:'#A29BFE',bg:'#F0EEFF',color:'#6C5CE7'},
+  '👕 패션·미용': {strip:'#F48FB1',bg:'#FFF0F5',color:'#AD1457'},
+  '💰 금융':    {strip:'#FDCB6E',bg:'#FFFBE6',color:'#B07C00'},
+  '✈ 여행':     {strip:'#4DB6AC',bg:'#E0F7F5',color:'#007B74'},
+  '🎁 경조사':  {strip:'#CE93D8',bg:'#F5EEFF',color:'#6A1B9A'},
+  '📦 기타':    {strip:'#B2BEC3',bg:'#F4F6F8',color:'#636E72'},
 };
 const _CAT_FALLBACK_STRIPS=['#FF6B6B','#FFA94D','#74B9FF','#55EFC4','#A29BFE','#FDCB6E','#FD79A8','#00CEC9'];
 function getCategoryColor(catName){
@@ -3710,7 +3806,7 @@ window.App={
   openIncomeModal,openFixedModal,openDefaultMode,cancelDefaultMode,saveDefaultItems,deleteDefaultItems,saveIncome,saveFixed,saveVariable,saveCredit,openCreditModal,editCredit,saveAsset,saveStock,
   editItem,deleteItem,
   updateAssetAmount,updateStockPrice,updateStockBuyAmount,updateStockCurrentAmount,onStockTypeChange,renderAssetStocks,
-  deleteCredit,toggleCreditPaid,
+  deleteCredit,toggleCreditPaid,markAllCreditPaidThisMonth,
   openEditLedgerModal,saveLedgerEdit,onLedgerEditTypeChange,
   openCalModal,saveCalEvent,deleteCalEvent,
   openSavingsModal,editSavingsGoal,saveSavingsGoal,deleteSavingsGoal,updateSavedAmount,pickSavingsColor,
