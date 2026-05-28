@@ -369,8 +369,11 @@ function getEffectiveVariable(y,m){
   const ledgerSums=getLedgerCategorySums(y,m);
   const ledgerCats=Object.keys(ledgerSums);
 
-  // Manual items (no autoFromFood, sync ledger amounts for all categories including 식비)
-  const manual=data.variable.filter(item=>!item.autoFromFood&&item.name!=='커피+샐러드').map(item=>{
+  // Credit auto items: include as-is (no ledger sync — each installment is its own amount)
+  const creditItems=(data.variable||[]).filter(item=>item.autoFromCredit);
+
+  // Manual items (no autoFromFood, no autoFromCredit, sync ledger amounts for all categories including 식비)
+  const manual=(data.variable||[]).filter(item=>!item.autoFromFood&&!item.autoFromCredit&&item.name!=='커피+샐러드').map(item=>{
     if(ledgerSums[item.category]!==undefined&&ledgerSums[item.category]>0){
       return{...item,amount:ledgerSums[item.category],autoFromLedger:true};
     }
@@ -389,7 +392,7 @@ function getEffectiveVariable(y,m){
     .filter(cat=>!manualCats.has(cat)&&!autoCats.has(cat)&&ledgerSums[cat]>0)
     .map(cat=>({id:'led_'+cat,name:cat,category:cat,amount:ledgerSums[cat],autoFromLedger:true}));
 
-  return[...manual,...autoItems,...ledgerItems];
+  return[...manual,...autoItems,...ledgerItems,...creditItems];
 }
 
 function getCardRate(cardId,months){
@@ -886,9 +889,9 @@ function renderDashboard(){
   const key=mkey(cm.y,cm.m);
   const entries=S.ledger[key]||[];
 
-  // Banner: ledger-based (excludes 신용카드 category)
+  // Banner: ledger-based (includes all expense categories including 신용카드 auto entries)
   const ledBannerIn=entries.filter(e=>e.type==='income').reduce((s,e)=>s+e.amount,0);
-  const ledBannerOut=entries.filter(e=>e.type==='expense'&&e.category!=='신용카드').reduce((s,e)=>s+e.amount,0);
+  const ledBannerOut=entries.filter(e=>e.type==='expense').reduce((s,e)=>s+e.amount,0);
   const bannerRemaining=entries.length>0?ledBannerIn-ledBannerOut:remaining;
   const bannerIsLedger=entries.length>0;
   const banner=document.getElementById('dash-budget-banner');
@@ -1171,48 +1174,128 @@ function renderCredit(){
   document.getElementById('credit-month-total').textContent=fmt(monthTotal);
   const list=document.getElementById('credit-list');
   if(S.creditCards.length===0){
-    list.innerHTML=`<div class="card" style="text-align:center;padding:50px;color:var(--text-sub);"><div style="font-size:40px;margin-bottom:12px;">💳</div><div style="font-weight:600;">등록된 할부 대금이 없어요</div></div>`;
+    list.innerHTML=`<div class="card" style="text-align:center;padding:50px;color:var(--text-sub);"><div style="font-size:40px;margin-bottom:12px;">💳</div><div style="font-weight:600;">등록된 대금이 없어요</div></div>`;
     return;
   }
-  list.innerHTML=S.creditCards.map(card=>{
-    const monthly=Math.ceil(card.amount/card.months);
-    const remaining=getCardTotalRemaining(card);
-    const deducted=getCardTotalPaid(card);
-    let rows='';
-    for(let i=0;i<card.months;i++){
-      let mm=card.startMonth+i,yy=card.startYear;
-      while(mm>12){mm-=12;yy++;}
-      const pk=mkey(yy,mm);
-      const isPaid=(card.paidMonths||[]).includes(pk);
-      const isCurrent=(yy===cm.y&&mm===cm.m);
-      rows+=`
-        <div class="credit-month-row">
-          <label class="credit-check-label">
-            <input type="checkbox" ${isPaid?'checked':''} onchange="App.toggleCreditPaid(${card.id},'${pk}',this.checked)"/>
-            <span class="${isPaid?'credit-paid':''}">${yy}년 ${mm}월 — ${fmt(monthly)}</span>
-            ${isPaid?'<span class="credit-paid-badge">결제완료</span>':''}
-          </label>
-          ${isCurrent&&!isPaid?'<span style="color:var(--orange);font-size:11px;font-weight:700;">← 이번 달</span>':''}
+  // Group by card name
+  const cardGroups={};
+  for(const card of S.creditCards){
+    if(!cardGroups[card.card])cardGroups[card.card]=[];
+    cardGroups[card.card].push(card);
+  }
+  list.innerHTML=Object.entries(cardGroups).map(([cardName,items])=>{
+    const oneTimeItems=items.filter(c=>c.months===1);
+    const installItems=items.filter(c=>c.months>1);
+    const groupRemaining=items.reduce((s,c)=>s+getCardTotalRemaining(c),0);
+
+    // 이번 달 이용내역 section (일시불 / months=1)
+    let oneTimeSection='';
+    if(oneTimeItems.length>0){
+      const rows=oneTimeItems.map(card=>{
+        const monthly=Math.ceil(card.amount/card.months);
+        const pk=mkey(card.startYear,card.startMonth);
+        const isPaid=(card.paidMonths||[]).includes(pk);
+        const isCurrent=(card.startYear===cm.y&&card.startMonth===cm.m);
+        const statusClass=isPaid?'paid':isCurrent?'current':'future';
+        const statusLabel=isPaid?'결제완료':isCurrent?'이번 달':'예정';
+        return `
+          <div class="credit-simple-row">
+            <label class="credit-check-label" style="gap:10px;flex:1;min-width:0;">
+              <input type="checkbox" ${isPaid?'checked':''} onchange="App.toggleCreditPaid(${card.id},'${pk}',this.checked)"/>
+              <div style="min-width:0;">
+                <div class="credit-item-name">${card.item}</div>
+                <div class="credit-item-sub">일시불</div>
+              </div>
+            </label>
+            <div class="credit-simple-right">
+              <span class="credit-simple-amount">${fmt(monthly)}원</span>
+              <span class="credit-status-badge ${statusClass}">${statusLabel}</span>
+              <div class="credit-row-actions">
+                <button class="credit-edit-btn" onclick="App.editCredit(${card.id})">✏️ 수정</button>
+                <button class="credit-delete-btn" style="font-size:12px;padding:2px 6px;border:1px solid var(--border);border-radius:6px;" onclick="App.deleteCredit(${card.id})">🗑️</button>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+      oneTimeSection=`
+        <div class="credit-section">
+          <div class="credit-section-title">이번 달 이용내역 <span class="credit-section-count">(총 ${oneTimeItems.length}건)</span></div>
+          ${rows}
         </div>`;
     }
+
+    // 할부 이용내역 section (months>1)
+    let installSection='';
+    if(installItems.length>0){
+      const installCards=installItems.map(card=>{
+        const monthly=Math.ceil(card.amount/card.months);
+        const paidCount=(card.paidMonths||[]).length;
+        let tableRows='';
+        for(let i=0;i<card.months;i++){
+          let mm=card.startMonth+i,yy=card.startYear;
+          while(mm>12){mm-=12;yy++;}
+          const pk=mkey(yy,mm);
+          const isPaid=(card.paidMonths||[]).includes(pk);
+          const isCurrent=(yy===cm.y&&mm===cm.m);
+          const day=Math.min(card.startDay||1,28);
+          const dateStr=yy+'.'+String(mm).padStart(2,'0')+'.'+String(day).padStart(2,'0');
+          const statusClass=isPaid?'paid':isCurrent?'current':'future';
+          const statusLabel=isPaid?'결제완료':isCurrent?'이번 달':'예정';
+          tableRows+=`
+            <tr class="${isCurrent?'install-row-current':''}">
+              <td>${i+1}회차${isCurrent?'<span class="install-current-badge"> (이번 달)</span>':''}</td>
+              <td>${dateStr}</td>
+              <td>${fmt(monthly)}원</td>
+              <td>
+                <label class="credit-check-label" style="gap:4px;justify-content:flex-start;">
+                  <input type="checkbox" ${isPaid?'checked':''} onchange="App.toggleCreditPaid(${card.id},'${pk}',this.checked)"/>
+                  <span class="credit-status-badge ${statusClass}">${statusLabel}</span>
+                </label>
+              </td>
+            </tr>`;
+        }
+        return `
+          <div class="credit-install-item">
+            <div class="credit-install-header">
+              <div style="min-width:0;flex:1;">
+                <div class="credit-item-name">${card.item}</div>
+                <div class="credit-item-sub">${card.months}개월 할부</div>
+              </div>
+              <div class="credit-install-stats">
+                <div class="credit-install-stat">
+                  <div class="credit-install-stat-label">월 납부</div>
+                  <div class="credit-install-stat-val">${fmt(monthly)}원</div>
+                </div>
+                <div class="credit-install-stat">
+                  <div class="credit-install-stat-label">진행</div>
+                  <div class="credit-install-stat-val">${paidCount} / ${card.months}회</div>
+                </div>
+              </div>
+              <div class="credit-row-actions">
+                <button class="credit-edit-btn" onclick="App.editCredit(${card.id})">✏️ 수정</button>
+                <button class="credit-delete-btn" style="font-size:12px;padding:2px 6px;border:1px solid var(--border);border-radius:6px;" onclick="App.deleteCredit(${card.id})">🗑️</button>
+              </div>
+            </div>
+            <table class="credit-install-table">
+              <thead><tr><th>회차</th><th>결제 예정일</th><th>금액</th><th>상태</th></tr></thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+          </div>`;
+      }).join('');
+      installSection=`
+        <div class="credit-section">
+          <div class="credit-section-title">할부 이용내역 <span class="credit-section-count">(총 ${installItems.length}건)</span></div>
+          ${installCards}
+        </div>`;
+    }
+
     return `
-      <div class="credit-card-item">
-        <div class="credit-card-header">
-          <div>
-            <div class="credit-card-name">💳 ${card.card} — ${card.item}</div>
-            <div class="credit-card-meta">월 ${fmt(monthly)} × ${card.months}개월 (${card.startYear}년 ${card.startMonth}월 시작)</div>
-          </div>
-          <div class="credit-card-remaining">
-            <div class="credit-remaining-label">남은 대금</div>
-            <div class="credit-remaining-amount">${fmt(remaining)}</div>
-          </div>
+      <div class="credit-card-group">
+        <div class="credit-card-group-header">
+          <span class="credit-card-group-name">💳 ${cardName}</span>
+          <span class="credit-card-group-count">총 ${items.length}건 · 남은 대금 ${fmt(groupRemaining)}원</span>
         </div>
-        <div class="credit-months-list">${rows}</div>
-        ${deducted>0?`<div class="credit-total-deducted">결제 완료: −${fmt(deducted)}</div>`:''}
-        <div class="credit-ledger-note">💡 결제완료 체크 시 해당 월 가계부에 자동 등록됩니다 (지출 합계 미포함)</div>
-        <div style="padding:10px 20px;display:flex;justify-content:flex-end;">
-          <button class="credit-delete-btn" onclick="App.deleteCredit(${card.id})">🗑️ 삭제</button>
-        </div>
+        ${oneTimeSection}${installSection}
       </div>`;
   }).join('');
 }
@@ -1956,17 +2039,95 @@ function deleteAutoVar(autoId){
   saveState();renderIncome();renderDashboard();
 }
 
+function _addCreditAutoEntries(card){
+  const monthly=Math.ceil(card.amount/card.months);
+  for(let i=0;i<card.months;i++){
+    let mm=card.startMonth+i,yy=card.startYear;
+    while(mm>12){mm-=12;yy++;}
+    const pk=mkey(yy,mm);
+    const day=Math.min(card.startDay||1,28);
+    const dateStr=yy+'-'+String(mm).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    const autoId='credit_'+card.id+'_'+pk;
+    if(!S.ledger[pk])S.ledger[pk]=[];
+    S.ledger[pk].push({
+      id:genId(),creditAutoId:autoId,
+      date:dateStr,type:'expense',category:'신용카드',
+      memo:card.card+' — '+card.item+(card.months>1?' ('+(i+1)+'/'+card.months+'회)':''),
+      amount:monthly
+    });
+    const mdata=getMonthData(yy,mm);
+    if(!mdata.variable)mdata.variable=[];
+    mdata.variable=mdata.variable.filter(v=>v.creditAutoId!==autoId);
+    mdata.variable.push({
+      id:genId(),
+      name:card.item+(card.months>1?' ('+(i+1)+'/'+card.months+'회)':''),
+      category:'신용카드',amount:monthly,
+      autoFromCredit:true,creditId:card.id,creditAutoId:autoId
+    });
+  }
+}
+
 function saveCredit(){
-  const card=document.getElementById('mc-card').value;
+  const editId=parseInt(document.getElementById('mc-edit-id').value)||0;
+  const cardSelId=document.getElementById('mc-card').value;
   const item=document.getElementById('mc-item').value.trim();
   const amount=parseFloat(document.getElementById('mc-amount').value)||0;
   const months=parseInt(document.getElementById('mc-months').value)||1;
   const startYear=parseInt(document.getElementById('mc-start-year').value)||2026;
   const startMonth=parseInt(document.getElementById('mc-start-month').value)||1;
+  const startDay=parseInt(document.getElementById('mc-start-day').value)||1;
   if(!item||amount<=0)return alert('항목명과 금액을 입력해주세요');
-  const cardName=S.cardSettings.find(c=>c.id==card)?.name||'카드';
-  S.creditCards.push({id:genId(),card:cardName,item,amount,months,startYear,startMonth,paidMonths:[]});
-  saveState();closeModal();renderCredit();renderIncome();renderDashboard();
+  const cardName=S.cardSettings.find(c=>c.id==cardSelId)?.name||'카드';
+  if(editId){
+    const existing=S.creditCards.find(c=>c.id==editId);
+    if(!existing)return;
+    for(const key of Object.keys(S.ledger)){
+      S.ledger[key]=(S.ledger[key]||[]).filter(e=>!e.creditAutoId||!e.creditAutoId.startsWith('credit_'+editId+'_'));
+    }
+    for(const key of Object.keys(S.monthlyData)){
+      if(S.monthlyData[key]&&S.monthlyData[key].variable){
+        S.monthlyData[key].variable=S.monthlyData[key].variable.filter(v=>v.creditId!==editId);
+      }
+    }
+    existing.card=cardName;existing.item=item;existing.amount=amount;
+    existing.months=months;existing.startYear=startYear;existing.startMonth=startMonth;existing.startDay=startDay;
+    existing.paidMonths=[];
+    _addCreditAutoEntries(existing);
+  } else {
+    const creditId=genId();
+    const newCard={id:creditId,card:cardName,item,amount,months,startYear,startMonth,startDay,paidMonths:[]};
+    S.creditCards.push(newCard);
+    _addCreditAutoEntries(newCard);
+  }
+  saveState();closeModal();renderCredit();renderIncome();renderDashboard();renderLedger();
+}
+
+function openCreditModal(){
+  document.getElementById('mc-edit-id').value='';
+  document.getElementById('mc-edit-label').textContent='추가';
+  document.getElementById('mc-item').value='';
+  document.getElementById('mc-amount').value='';
+  document.getElementById('mc-months').value='';
+  document.getElementById('mc-start-day').value='';
+  const now=new Date();
+  document.getElementById('mc-start-year').value=now.getFullYear();
+  document.getElementById('mc-start-month').value=now.getMonth()+1;
+  openModal('credit');
+}
+
+function editCredit(id){
+  const card=S.creditCards.find(c=>c.id==id);if(!card)return;
+  document.getElementById('mc-edit-id').value=id;
+  document.getElementById('mc-edit-label').textContent='수정';
+  const cardSetting=S.cardSettings.find(c=>c.name===card.card);
+  document.getElementById('mc-item').value=card.item;
+  document.getElementById('mc-amount').value=card.amount;
+  document.getElementById('mc-months').value=card.months;
+  document.getElementById('mc-start-year').value=card.startYear;
+  document.getElementById('mc-start-month').value=card.startMonth;
+  document.getElementById('mc-start-day').value=card.startDay||1;
+  openModal('credit');
+  if(cardSetting){const sel=document.getElementById('mc-card');if(sel)sel.value=cardSetting.id;}
 }
 
 function populateAssetCategorySelect(selectedCat){
@@ -2132,11 +2293,15 @@ function updateStockCurrentAmount(id,val){const st=S.stocks.find(s=>s.id==id);if
 
 function deleteCredit(id){
   if(!confirm('삭제하시겠어요?'))return;
-  // Remove any auto-added ledger entries for this card
   const card=S.creditCards.find(c=>c.id==id);
   if(card){
     for(const key of Object.keys(S.ledger)){
       S.ledger[key]=(S.ledger[key]||[]).filter(e=>!e.creditAutoId||!e.creditAutoId.startsWith('credit_'+id+'_'));
+    }
+    for(const key of Object.keys(S.monthlyData)){
+      if(S.monthlyData[key]&&S.monthlyData[key].variable){
+        S.monthlyData[key].variable=S.monthlyData[key].variable.filter(v=>v.creditId!==id);
+      }
     }
   }
   S.creditCards=S.creditCards.filter(c=>c.id!=id);
@@ -2146,30 +2311,10 @@ function deleteCredit(id){
 function toggleCreditPaid(cardId,pk,checked){
   const card=S.creditCards.find(c=>c.id==cardId);if(!card)return;
   if(!card.paidMonths)card.paidMonths=[];
-  const autoEntryId='credit_'+cardId+'_'+pk;
   if(checked&&!card.paidMonths.includes(pk)){
     card.paidMonths.push(pk);
-    // Auto-add to ledger as 신용카드 category
-    const parts=pk.split('-').map(Number);
-    const py=parts[0],pm=parts[1];
-    const ledgerKey=mkey(py,pm);
-    if(!S.ledger[ledgerKey])S.ledger[ledgerKey]=[];
-    const monthly=Math.ceil(card.amount/card.months);
-    const dateStr=py+'-'+String(pm).padStart(2,'0')+'-01';
-    S.ledger[ledgerKey].push({
-      id:genId(),creditAutoId:autoEntryId,
-      date:dateStr,type:'expense',category:'신용카드',
-      memo:card.card+' — '+card.item,amount:monthly
-    });
   } else if(!checked){
     card.paidMonths=card.paidMonths.filter(m=>m!==pk);
-    // Remove auto-added ledger entry
-    const parts=pk.split('-').map(Number);
-    const py=parts[0],pm=parts[1];
-    const ledgerKey=mkey(py,pm);
-    if(S.ledger[ledgerKey]){
-      S.ledger[ledgerKey]=S.ledger[ledgerKey].filter(e=>e.creditAutoId!==autoEntryId);
-    }
   }
   saveState();renderCredit();renderIncome();renderDashboard();renderLedger();
 }
@@ -2402,6 +2547,7 @@ function renderLedger(){
             </div>
             <div class="ledger-entry-right">
               <span class="ledger-amount ${e.type==='income'?'green':'red'}">${e.type==='income'?'+':'−'}${fmt(e.amount)}</span>
+              <button class="icon-btn" onclick="App.openEditLedgerModal('${key}',${e.id})" title="수정" style="font-size:13px;">✏️</button>
               ${!e.creditAutoId?`<button class="icon-btn" onclick="App.deleteLedgerEntry('${key}',${e.id})">🗑️</button>`:''}
             </div>
           </div>`;}).join('')}
@@ -2432,6 +2578,53 @@ function addLedgerEntry(){
 function deleteLedgerEntry(key,id){
   if(S.ledger[key])S.ledger[key]=S.ledger[key].filter(e=>e.id!=id);
   saveState();renderLedger();renderDashboard();renderIncome();
+}
+
+function _populateLedgerEditCat(type,selected){
+  const sel=document.getElementById('mle-category');if(!sel)return;
+  const cats=S.ledgerCategories||[];
+  let opts=cats.map(c=>`<option value="${c.name}" ${c.name===selected?'selected':''}>${c.isSavings?'💜 ':''}${c.name}</option>`).join('');
+  if(selected&&!cats.some(c=>c.name===selected)){
+    opts=`<option value="${selected}" selected>${selected}</option>`+opts;
+  }
+  sel.innerHTML=opts;
+}
+
+function onLedgerEditTypeChange(){
+  const type=document.getElementById('mle-type').value;
+  const cur=document.getElementById('mle-category').value;
+  _populateLedgerEditCat(type,cur);
+}
+
+function openEditLedgerModal(key,id){
+  const entries=S.ledger[key]||[];
+  const entry=entries.find(e=>e.id==id);if(!entry)return;
+  document.getElementById('mle-key').value=key;
+  document.getElementById('mle-id').value=id;
+  document.getElementById('mle-type').value=entry.type;
+  document.getElementById('mle-date').value=entry.date;
+  const rawMemo=(entry.memo||'')+(entry.tags&&entry.tags.length?entry.tags.map(t=>' #'+t).join(''):'');
+  document.getElementById('mle-memo').value=rawMemo;
+  document.getElementById('mle-amount').value=entry.amount;
+  _populateLedgerEditCat(entry.type,entry.category);
+  openModal('ledger-edit');
+}
+
+function saveLedgerEdit(){
+  const key=document.getElementById('mle-key').value;
+  const id=parseInt(document.getElementById('mle-id').value);
+  const date=document.getElementById('mle-date').value;
+  const type=document.getElementById('mle-type').value;
+  const category=document.getElementById('mle-category').value;
+  const rawMemo=document.getElementById('mle-memo').value.trim();
+  const amount=parseFloat(document.getElementById('mle-amount').value)||0;
+  if(!date||amount<=0)return alert('날짜와 금액을 입력해주세요');
+  const tags=extractTagsFromMemo(rawMemo);
+  const memo=cleanMemoText(rawMemo);
+  const entries=S.ledger[key];if(!entries)return;
+  const idx=entries.findIndex(e=>e.id==id);if(idx<0)return;
+  entries[idx]={...entries[idx],date,type,category,memo,tags,amount};
+  saveState();closeModal();renderLedger();renderDashboard();renderIncome();
 }
 
 function setLedgerFilter(cat){S.ledgerFilter=cat;renderLedger();}
@@ -3467,10 +3660,11 @@ window.App={
   openModal,closeModal,openVariableModal,
   toggleVariableAuto,deleteAutoVar,
   openBudgetModal,saveBudgetCategory,deleteBudgetCategory,
-  openIncomeModal,openFixedModal,openDefaultMode,cancelDefaultMode,saveDefaultItems,deleteDefaultItems,saveIncome,saveFixed,saveVariable,saveCredit,saveAsset,saveStock,
+  openIncomeModal,openFixedModal,openDefaultMode,cancelDefaultMode,saveDefaultItems,deleteDefaultItems,saveIncome,saveFixed,saveVariable,saveCredit,openCreditModal,editCredit,saveAsset,saveStock,
   editItem,deleteItem,
   updateAssetAmount,updateStockPrice,updateStockBuyAmount,updateStockCurrentAmount,onStockTypeChange,renderAssetStocks,
   deleteCredit,toggleCreditPaid,
+  openEditLedgerModal,saveLedgerEdit,onLedgerEditTypeChange,
   openCalModal,saveCalEvent,deleteCalEvent,
   openSavingsModal,editSavingsGoal,saveSavingsGoal,deleteSavingsGoal,updateSavedAmount,pickSavingsColor,
   toggleFoodPanel,closeFoodPanel,saveFoodField,toggleFoodDirect,saveFoodDirect,
