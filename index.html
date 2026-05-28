@@ -507,12 +507,33 @@
         </div>
       </div>
       <div class="ledger-closed-banner" id="ledger-closed-banner" style="display:none;"></div>
-      <!-- Lcat panel -->
-      <div class="lcat-toggle-bar" onclick="App.toggleLcatPanel()">
-        ⚙️ 카테고리 관리
-        <span id="lcat-panel-arrow" style="font-size:12px;margin-left:4px;">∨</span>
+      <!-- Lcat + Auto 2-column bar -->
+      <div class="lcat-auto-split-bar">
+        <div class="lcat-auto-split-left" onclick="App.toggleLcatPanel()">
+          ⚙️ 카테고리 관리
+          <span id="lcat-panel-arrow" style="font-size:11px;margin-left:4px;">∨</span>
+        </div>
+        <div class="lcat-auto-split-right" onclick="App.toggleLedgerAutoPanel()">
+          ⚡ 자동화
+          <span id="ledger-auto-arrow" style="font-size:11px;margin-left:4px;">∨</span>
+        </div>
       </div>
       <div class="lcat-panel-wrap" id="lcat-panel" style="display:none;"></div>
+      <!-- Ledger auto panel -->
+      <div id="ledger-auto-panel" style="display:none;">
+        <div class="ledger-auto-add-row">
+          <select id="la-type" class="lq-input" style="flex:0 0 68px;">
+            <option value="expense">지출</option>
+            <option value="income">수입</option>
+          </select>
+          <input type="number" id="la-day" class="lq-input" style="flex:0 0 54px;" placeholder="날짜" min="1" max="31"/>
+          <select id="la-cat-sel" class="lq-input" style="flex:1;"></select>
+          <input type="text" id="la-memo" class="lq-input" style="flex:2;" placeholder="메모 #태그"/>
+          <input type="number" id="la-amount" class="lq-input" style="flex:1;" placeholder="금액"/>
+          <button class="lq-add-btn" onclick="App.addAutoInline()">추가</button>
+        </div>
+        <div id="ledger-auto-list"></div>
+      </div>
       <!-- Import panel -->
       <div class="ledger-import-panel" id="ledger-import-panel" style="display:none;"></div>
       <div class="ledger-quick-add">
@@ -585,11 +606,6 @@
   <div class="form-group"><label>항목명</label><input type="text" id="mf-name" class="form-input" placeholder="월세"/></div>
   <div class="form-group"><label>카테고리</label><input type="text" id="mf-cat" class="form-input" placeholder="주거"/></div>
   <div class="form-group"><label>금액 (원)</label><input type="number" id="mf-amount" class="form-input" placeholder="460000"/></div>
-  <div class="savings-classify-row">
-    <input type="checkbox" id="mf-is-savings"/>
-    <label for="mf-is-savings" style="cursor:pointer;">💜 저축으로 분류</label>
-    <span class="savings-classify-hint">(체크 시 저축률에 반영)</span>
-  </div>
   <div class="modal-actions">
     <button class="btn-cancel" onclick="App.closeModal()">취소</button>
     <button class="btn-save" onclick="App.saveFixed()">저장</button>
@@ -603,15 +619,6 @@
   <div class="form-group"><label>항목명</label><input type="text" id="mv-name" class="form-input" placeholder="외식"/></div>
   <div class="form-group"><label>카테고리</label><input type="text" id="mv-cat" class="form-input" placeholder="식비"/></div>
   <div class="form-group"><label>금액 (원)</label><input type="number" id="mv-amount" class="form-input" placeholder="50000"/></div>
-  <div class="form-group">
-    <label>
-      <input type="checkbox" id="mv-auto-check" onchange="App.toggleVariableAuto(this.checked)"/>
-      자동화 항목 (매달 자동 반영)
-    </label>
-  </div>
-  <div id="mv-auto-day-wrap" style="display:none;">
-    <div class="form-group"><label>결제일 (매월 몇 일)</label><input type="number" id="mv-auto-day" class="form-input" placeholder="15" min="1" max="31"/></div>
-  </div>
   <div class="modal-actions">
     <button class="btn-cancel" onclick="App.closeModal()">취소</button>
     <button class="btn-save" onclick="App.saveVariable()">저장</button>
@@ -799,11 +806,21 @@
 
 <!-- Auto Modal -->
 <div class="modal" id="modal-auto">
-  <div class="modal-header">🤖 자동화 항목 <span id="modal-auto-edit-label">추가</span></div>
+  <div class="modal-header">⚡ 자동화 <span id="modal-auto-edit-label">추가</span></div>
   <input type="hidden" id="modal-auto-id"/>
-  <div class="form-group"><label>항목명</label><input type="text" id="ma2-name" class="form-input" placeholder="헬스장 회비"/></div>
-  <div class="form-group"><label>카테고리</label><input type="text" id="ma2-cat" class="form-input" placeholder="건강"/></div>
-  <div class="form-group"><label>결제일 (매월)</label><input type="number" id="ma2-day" class="form-input" placeholder="15" min="1" max="31"/></div>
+  <div class="form-group">
+    <label>분류</label>
+    <select id="ma2-type" class="form-input">
+      <option value="expense">지출</option>
+      <option value="income">수입</option>
+    </select>
+  </div>
+  <div class="form-group"><label>날짜 (매월 몇 일)</label><input type="number" id="ma2-day" class="form-input" placeholder="15" min="1" max="31"/></div>
+  <div class="form-group">
+    <label>카테고리</label>
+    <select id="ma2-cat-sel" class="form-input"></select>
+  </div>
+  <div class="form-group"><label>메모 #태그</label><input type="text" id="ma2-memo" class="form-input" placeholder="헬스장 회비 #건강"/></div>
   <div class="form-group"><label>금액 (원)</label><input type="number" id="ma2-amount" class="form-input" placeholder="80000"/></div>
   <div class="modal-actions">
     <button class="btn-cancel" onclick="App.closeModal()">취소</button>
