@@ -219,8 +219,8 @@
             <div class="fc-amount-section">
               <div class="fc-amount-label">현재 보유 금액</div>
               <div class="fc-amount-row">
-                <input type="number" id="fc-amount-input" class="fc-amount-input" placeholder="0"
-                  oninput="App.previewFundAmount(this.value)"
+                <input type="text" inputmode="numeric" id="fc-amount-input" class="fc-amount-input" placeholder="0"
+                  oninput="App.numInputFmt(this);App.previewFundAmount(this.value)"
                   onchange="App.setFundAmount(this.value)"
                   onkeydown="if(event.key==='Enter')App.setFundAmount(this.value)"/>
                 <span class="fc-amount-unit">원</span>
@@ -482,7 +482,8 @@
             <span>직접 설정</span>
           </label>
           <div id="food-direct-input-wrap" style="display:none;margin-top:8px;">
-            <input type="number" id="food-direct-input" class="inline-input" placeholder="직접 입력 (원)"
+            <input type="text" inputmode="numeric" id="food-direct-input" class="inline-input" placeholder="직접 입력 (원)"
+              oninput="App.numInputFmt(this)"
               onchange="App.saveFoodDirect(this.value)"
               onkeydown="if(event.key==='Enter'){App.saveFoodDirect(this.value);this.blur();}"/>
           </div>
@@ -529,7 +530,7 @@
           <input type="number" id="la-day" class="lq-input" style="flex:0 0 54px;" placeholder="날짜" min="1" max="31"/>
           <select id="la-cat-sel" class="lq-input" style="flex:1;"></select>
           <input type="text" id="la-memo" class="lq-input" style="flex:2;" placeholder="메모 #태그"/>
-          <input type="number" id="la-amount" class="lq-input" style="flex:1;" placeholder="금액"/>
+          <input type="text" inputmode="numeric" id="la-amount" class="lq-input" style="flex:1;" placeholder="금액" oninput="App.numInputFmt(this)"/>
           <button class="lq-add-btn" onclick="App.addAutoInline()">추가</button>
         </div>
         <div id="ledger-auto-list"></div>
@@ -554,7 +555,8 @@
               onblur="App.hideMemoDropdown(200)"/>
             <div id="lq-tag-dropdown" class="lq-tag-dropdown" style="display:none;"></div>
           </div>
-          <input type="number" id="lq-amount" class="lq-input lq-amount" placeholder="금액"
+          <input type="text" inputmode="numeric" id="lq-amount" class="lq-input lq-amount" placeholder="금액"
+            oninput="App.numInputFmt(this)"
             onkeydown="if(event.key==='Enter')App.addLedgerEntry()"/>
           <button class="lq-add-btn" onclick="App.addLedgerEntry()">추가</button>
         </div>
@@ -592,7 +594,7 @@
   <input type="hidden" id="modal-income-id"/>
   <div class="form-group"><label>항목명</label><input type="text" id="mi-name" class="form-input" placeholder="월급"/></div>
   <div class="form-group"><label>카테고리</label><input type="text" id="mi-cat" class="form-input" placeholder="급여"/></div>
-  <div class="form-group"><label>금액 (원)</label><input type="number" id="mi-amount" class="form-input" placeholder="2197223"/></div>
+  <div class="form-group"><label>금액 (원)</label><input type="text" inputmode="numeric" id="mi-amount" class="form-input" placeholder="2,197,223" oninput="App.numInputFmt(this)"/></div>
   <div class="modal-actions">
     <button class="btn-cancel" onclick="App.closeModal()">취소</button>
     <button class="btn-save" onclick="App.saveIncome()">저장</button>
@@ -605,7 +607,7 @@
   <input type="hidden" id="modal-fixed-id"/>
   <div class="form-group"><label>항목명</label><input type="text" id="mf-name" class="form-input" placeholder="월세"/></div>
   <div class="form-group"><label>카테고리</label><input type="text" id="mf-cat" class="form-input" placeholder="주거"/></div>
-  <div class="form-group"><label>금액 (원)</label><input type="number" id="mf-amount" class="form-input" placeholder="460000"/></div>
+  <div class="form-group"><label>금액 (원)</label><input type="text" inputmode="numeric" id="mf-amount" class="form-input" placeholder="460,000" oninput="App.numInputFmt(this)"/></div>
   <div class="modal-actions">
     <button class="btn-cancel" onclick="App.closeModal()">취소</button>
     <button class="btn-save" onclick="App.saveFixed()">저장</button>
@@ -618,7 +620,7 @@
   <input type="hidden" id="modal-variable-id"/>
   <div class="form-group"><label>항목명</label><input type="text" id="mv-name" class="form-input" placeholder="외식"/></div>
   <div class="form-group"><label>카테고리</label><input type="text" id="mv-cat" class="form-input" placeholder="식비"/></div>
-  <div class="form-group"><label>금액 (원)</label><input type="number" id="mv-amount" class="form-input" placeholder="50000"/></div>
+  <div class="form-group"><label>금액 (원)</label><input type="text" inputmode="numeric" id="mv-amount" class="form-input" placeholder="50,000" oninput="App.numInputFmt(this)"/></div>
   <div class="modal-actions">
     <button class="btn-cancel" onclick="App.closeModal()">취소</button>
     <button class="btn-save" onclick="App.saveVariable()">저장</button>
@@ -631,7 +633,7 @@
   <input type="hidden" id="mc-edit-id"/>
   <div class="form-group"><label>카드 선택</label><select id="mc-card" class="form-input"></select></div>
   <div class="form-group"><label>항목명</label><input type="text" id="mc-item" class="form-input" placeholder="쿠팡"/></div>
-  <div class="form-group"><label>총 금액 (원)</label><input type="number" id="mc-amount" class="form-input" placeholder="300000"/></div>
+  <div class="form-group"><label>총 금액 (원)</label><input type="text" inputmode="numeric" id="mc-amount" class="form-input" placeholder="300,000" oninput="App.numInputFmt(this)"/></div>
   <div class="form-group"><label>할부 개월 수</label><input type="number" id="mc-months" class="form-input" placeholder="3" min="1"/></div>
   <div class="form-group">
     <label>시작 월 / 결제일</label>
@@ -662,7 +664,7 @@
   <div class="form-group"><label>날짜</label><input type="date" id="mle-date" class="form-input"/></div>
   <div class="form-group"><label>분류</label><select id="mle-category" class="form-input"></select></div>
   <div class="form-group"><label>내용 (메모 + #태그)</label><input type="text" id="mle-memo" class="form-input" placeholder="커피 #카페"/></div>
-  <div class="form-group"><label>금액 (원)</label><input type="number" id="mle-amount" class="form-input" placeholder="15000"/></div>
+  <div class="form-group"><label>금액 (원)</label><input type="text" inputmode="numeric" id="mle-amount" class="form-input" placeholder="15,000" oninput="App.numInputFmt(this)"/></div>
   <div class="modal-actions">
     <button class="btn-cancel" onclick="App.closeModal()">취소</button>
     <button class="btn-save" onclick="App.saveLedgerEdit()">저장</button>
@@ -674,7 +676,7 @@
   <div class="modal-header">🏦 자산 <span id="modal-asset-edit-label">추가</span></div>
   <input type="hidden" id="modal-asset-id"/>
   <div class="form-group"><label>자산명</label><input type="text" id="ma-name" class="form-input" placeholder="국민은행 통장"/></div>
-  <div class="form-group"><label>금액 (원)</label><input type="number" id="ma-amount" class="form-input" placeholder="1000000"/></div>
+  <div class="form-group"><label>금액 (원)</label><input type="text" inputmode="numeric" id="ma-amount" class="form-input" placeholder="1,000,000" oninput="App.numInputFmt(this)"/></div>
   <div class="form-group">
     <label>분류</label>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -715,8 +717,8 @@
       <div class="form-group"><label>섹터</label><input type="text" id="ms-sector" class="form-input" placeholder="반도체"/></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>매수 단가 (원)</label><input type="number" id="ms-buy" class="form-input" placeholder="156700"/></div>
-      <div class="form-group"><label>현재가 (원)</label><input type="number" id="ms-current" class="form-input" placeholder="156700"/></div>
+      <div class="form-group"><label>매수 단가 (원)</label><input type="text" inputmode="numeric" id="ms-buy" class="form-input" placeholder="156,700" oninput="App.numInputFmt(this)"/></div>
+      <div class="form-group"><label>현재가 (원)</label><input type="text" inputmode="numeric" id="ms-current" class="form-input" placeholder="156,700" oninput="App.numInputFmt(this)"/></div>
     </div>
     <div class="form-group"><label>보유 수량</label><input type="number" id="ms-qty" class="form-input" placeholder="1"/></div>
   </div>
@@ -730,8 +732,8 @@
       💡 해외주식·금현물은 매입금액과 평가금액을 직접 입력합니다 (자동 새로고침 없음)
     </div>
     <div class="form-row">
-      <div class="form-group"><label>매입금액 (원)</label><input type="number" id="ms-buy-amount" class="form-input" placeholder="1000000"/></div>
-      <div class="form-group"><label>평가금액 (원)</label><input type="number" id="ms-current-amount" class="form-input" placeholder="1200000"/></div>
+      <div class="form-group"><label>매입금액 (원)</label><input type="text" inputmode="numeric" id="ms-buy-amount" class="form-input" placeholder="1,000,000" oninput="App.numInputFmt(this)"/></div>
+      <div class="form-group"><label>평가금액 (원)</label><input type="text" inputmode="numeric" id="ms-current-amount" class="form-input" placeholder="1,200,000" oninput="App.numInputFmt(this)"/></div>
     </div>
   </div>
   <div class="modal-actions">
@@ -745,7 +747,7 @@
   <div class="modal-header">📊 예산 카테고리 <span id="modal-budget-edit-label">추가</span></div>
   <input type="hidden" id="modal-budget-id"/>
   <div class="form-group"><label>카테고리 이름</label><input type="text" id="mb-name" class="form-input" placeholder="식비, 생필품, 카페..."/></div>
-  <div class="form-group"><label>예산 금액 (원)</label><input type="number" id="mb-budget" class="form-input" placeholder="200000"/></div>
+  <div class="form-group"><label>예산 금액 (원)</label><input type="text" inputmode="numeric" id="mb-budget" class="form-input" placeholder="200,000" oninput="App.numInputFmt(this)"/></div>
   <div class="savings-classify-row" style="margin-bottom:12px;">
     <input type="checkbox" id="mb-synced" checked/>
     <label for="mb-synced" style="cursor:pointer;font-size:13px;">🔗 동기화 — 선택 달 이후 모든 달에 동일 예산 적용 (이전 달 유지)</label>
@@ -772,7 +774,7 @@
   <input type="hidden" id="modal-cal-id"/>
   <div class="cal-food-hint" id="cal-food-hint" style="display:none;background:var(--green-light);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--green);"></div>
   <div class="form-group"><label>내용</label><input type="text" id="mc-event-name" class="form-input" placeholder="서울 여행"/></div>
-  <div class="form-group"><label>금액 (원, 선택)</label><input type="number" id="mc-event-amount" class="form-input" placeholder="50000"/></div>
+  <div class="form-group"><label>금액 (원, 선택)</label><input type="text" inputmode="numeric" id="mc-event-amount" class="form-input" placeholder="50,000" oninput="App.numInputFmt(this)"/></div>
   <div class="modal-actions">
     <button class="btn-cancel" onclick="App.closeModal()">취소</button>
     <button class="btn-save" onclick="App.saveCalEvent()">저장</button>
@@ -784,8 +786,8 @@
   <div class="modal-header">🎯 저축 목표 추가</div>
   <input type="hidden" id="modal-savings-id"/>
   <div class="form-group"><label>목표명</label><input type="text" id="msg-name" class="form-input" placeholder="호주 여행 적금..."/></div>
-  <div class="form-group"><label>목표 금액 (원)</label><input type="number" id="msg-target" class="form-input" placeholder="5000000"/></div>
-  <div class="form-group"><label>현재 저축액 (원)</label><input type="number" id="msg-saved" class="form-input" placeholder="0"/></div>
+  <div class="form-group"><label>목표 금액 (원)</label><input type="text" inputmode="numeric" id="msg-target" class="form-input" placeholder="5,000,000" oninput="App.numInputFmt(this)"/></div>
+  <div class="form-group"><label>현재 저축액 (원)</label><input type="text" inputmode="numeric" id="msg-saved" class="form-input" placeholder="0" oninput="App.numInputFmt(this)"/></div>
   <div class="form-group">
     <label>색상</label>
     <div class="color-picker-row" style="display:flex;gap:8px;margin-top:6px;">
@@ -821,7 +823,7 @@
     <select id="ma2-cat-sel" class="form-input"></select>
   </div>
   <div class="form-group"><label>메모 #태그</label><input type="text" id="ma2-memo" class="form-input" placeholder="헬스장 회비 #건강"/></div>
-  <div class="form-group"><label>금액 (원)</label><input type="number" id="ma2-amount" class="form-input" placeholder="80000"/></div>
+  <div class="form-group"><label>금액 (원)</label><input type="text" inputmode="numeric" id="ma2-amount" class="form-input" placeholder="80,000" oninput="App.numInputFmt(this)"/></div>
   <div class="modal-actions">
     <button class="btn-cancel" onclick="App.closeModal()">취소</button>
     <button class="btn-save" onclick="App.saveAuto()">저장</button>
@@ -833,7 +835,7 @@
   <div class="modal-header">🔄 구독 서비스 추가</div>
   <input type="hidden" id="modal-sub-id"/>
   <div class="form-group"><label>서비스명</label><input type="text" id="ms2-name" class="form-input" placeholder="넷플릭스"/></div>
-  <div class="form-group"><label>월 금액 (원)</label><input type="number" id="ms2-amount" class="form-input" placeholder="17000"/></div>
+  <div class="form-group"><label>월 금액 (원)</label><input type="text" inputmode="numeric" id="ms2-amount" class="form-input" placeholder="17,000" oninput="App.numInputFmt(this)"/></div>
   <div class="form-group"><label>결제일</label><input type="number" id="ms2-day" class="form-input" placeholder="15" min="1" max="31"/></div>
   <div class="form-group"><label>카테고리</label>
     <select id="ms2-category" class="form-input">
