@@ -295,7 +295,7 @@
             <span class="month-label" id="credit-month-label"></span>
             <button class="month-btn" onclick="App.changeMonth(1,'credit')">›</button>
           </div>
-          <button class="add-btn primary" onclick="App.openModal('credit')">+ 대금 추가</button>
+          <button class="add-btn primary" onclick="App.openCreditModal()">+ 대금 추가</button>
         </div>
       </div>
       <div class="credit-banner">
@@ -625,21 +625,45 @@
 
 <!-- Credit Modal -->
 <div class="modal" id="modal-credit">
-  <div class="modal-header">💳 신용카드 대금 추가</div>
+  <div class="modal-header">💳 신용카드 대금 <span id="mc-edit-label">추가</span></div>
+  <input type="hidden" id="mc-edit-id"/>
   <div class="form-group"><label>카드 선택</label><select id="mc-card" class="form-input"></select></div>
   <div class="form-group"><label>항목명</label><input type="text" id="mc-item" class="form-input" placeholder="쿠팡"/></div>
   <div class="form-group"><label>총 금액 (원)</label><input type="number" id="mc-amount" class="form-input" placeholder="300000"/></div>
   <div class="form-group"><label>할부 개월 수</label><input type="number" id="mc-months" class="form-input" placeholder="3" min="1"/></div>
   <div class="form-group">
-    <label>시작 월</label>
+    <label>시작 월 / 결제일</label>
     <div class="form-row">
       <input type="number" id="mc-start-year" class="form-input" placeholder="2026" value="2026"/>
       <input type="number" id="mc-start-month" class="form-input" placeholder="5" value="5" min="1" max="12"/>
+      <input type="number" id="mc-start-day" class="form-input" placeholder="일" min="1" max="28" style="max-width:75px;"/>
     </div>
   </div>
   <div class="modal-actions">
     <button class="btn-cancel" onclick="App.closeModal()">취소</button>
     <button class="btn-save" onclick="App.saveCredit()">저장</button>
+  </div>
+</div>
+
+<!-- Ledger Edit Modal -->
+<div class="modal" id="modal-ledger-edit">
+  <div class="modal-header">📝 가계부 수정</div>
+  <input type="hidden" id="mle-key"/>
+  <input type="hidden" id="mle-id"/>
+  <div class="form-group">
+    <label>유형</label>
+    <select id="mle-type" class="form-input" onchange="App.onLedgerEditTypeChange()">
+      <option value="expense">지출</option>
+      <option value="income">수입</option>
+    </select>
+  </div>
+  <div class="form-group"><label>날짜</label><input type="date" id="mle-date" class="form-input"/></div>
+  <div class="form-group"><label>분류</label><select id="mle-category" class="form-input"></select></div>
+  <div class="form-group"><label>내용 (메모 + #태그)</label><input type="text" id="mle-memo" class="form-input" placeholder="커피 #카페"/></div>
+  <div class="form-group"><label>금액 (원)</label><input type="number" id="mle-amount" class="form-input" placeholder="15000"/></div>
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="App.closeModal()">취소</button>
+    <button class="btn-save" onclick="App.saveLedgerEdit()">저장</button>
   </div>
 </div>
 
