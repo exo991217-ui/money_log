@@ -85,6 +85,9 @@ function loadState(){
       if(!S.ledger)S.ledger={};
       if(!S.subscriptions)S.subscriptions=[];
       if(!S.automations)S.automations=[];
+      // Migrate automations: add type/memo/tags for old entries
+      S.automations=S.automations.map(a=>({type:'expense',memo:a.name||'',tags:[],...a}));
+      if(!S.autoSkippedIds)S.autoSkippedIds=[];
       if(!S.closedMonths)S.closedMonths={};
       if(!S.budgetCategories)S.budgetCategories=DEFAULT_DATA().budgetCategories;
       if(!S.monthBudgets)S.monthBudgets={};
@@ -225,6 +228,9 @@ window.FB_MERGE = function(fbData) {
     if(!S.ledger)S.ledger={};
     if(!S.subscriptions)S.subscriptions=[];
     if(!S.automations)S.automations=[];
+    // Migrate automations: add type/memo/tags for old entries
+    S.automations=S.automations.map(a=>({type:'expense',memo:a.name||'',tags:[],...a}));
+    if(!S.autoSkippedIds)S.autoSkippedIds=[];
     if(!S.closedMonths)S.closedMonths={};
     if(!S.budgetCategories)S.budgetCategories=D.budgetCategories;
     if(!S.monthBudgets)S.monthBudgets={};
@@ -434,20 +440,14 @@ function getEffectiveVariable(y,m){
     return item;
   });
 
-  // Automation items
-  const autoItems=(S.automations||[])
-    .filter(a=>a.active!==false)
-    .map(a=>({id:'auto_'+a.id,name:a.name,category:a.category,amount:a.amount,autoFromAuto:true,autoId:a.id}));
-
-  // Ledger-only items (exclude credit auto entries; include 식비)
+  // Ledger-only items (exclude credit auto entries)
   const manualCats=new Set(manual.map(i=>i.category));
-  const autoCats=new Set(autoItems.map(i=>i.category));
   const creditCats=new Set(creditItems.map(i=>i.category));
   const ledgerItems=ledgerCats
-    .filter(cat=>!manualCats.has(cat)&&!autoCats.has(cat)&&!creditCats.has(cat)&&ledgerSums[cat]>0)
+    .filter(cat=>!manualCats.has(cat)&&!creditCats.has(cat)&&ledgerSums[cat]>0)
     .map(cat=>({id:'led_'+cat,name:cat,category:cat,amount:ledgerSums[cat],autoFromLedger:true}));
 
-  return[...manual,...autoItems,...ledgerItems,...creditItems];
+  return[...manual,...ledgerItems,...creditItems];
 }
 
 function getCardRate(cardId,months){
@@ -458,17 +458,13 @@ function getCardRate(cardId,months){
 
 function getTotalIncome(y,m){return getMonthData(y,m).income.reduce((s,i)=>s+(parseFloat(i.amount)||0),0);}
 function getTotalFixed(y,m){return getMonthData(y,m).fixed.reduce((s,i)=>s+(parseFloat(i.amount)||0),0);}
-function getTotalFixedExpense(y,m){return getMonthData(y,m).fixed.filter(i=>!i.isSavings).reduce((s,i)=>s+(parseFloat(i.amount)||0),0);}
-function getTotalSavings(y,m){
-  const fixedSav=getMonthData(y,m).fixed.filter(i=>i.isSavings).reduce((s,i)=>s+(parseFloat(i.amount)||0),0);
-  return fixedSav+getLedgerSavings(y,m);
-}
+function getTotalFixedExpense(y,m){return getMonthData(y,m).fixed.reduce((s,i)=>s+(parseFloat(i.amount)||0),0);}
+function getTotalSavings(y,m){return getLedgerSavings(y,m);}
 function getLedgerSavings(y,m){
-  const savCats=new Set((S.ledgerCategories||[]).filter(c=>c.isSavings).map(c=>c.name));
-  if(savCats.size===0)return 0;
   const key=mkey(y,m);
   const entries=S.ledger[key]||[];
-  return entries.filter(e=>e.type==='income'&&savCats.has(e.category)).reduce((s,e)=>s+e.amount,0);
+  // #저축 태그가 달린 지출 항목만 저축으로 집계
+  return entries.filter(e=>e.type==='expense'&&(e.tags||[]).includes('저축')).reduce((s,e)=>s+e.amount,0);
 }
 function getTotalVariable(y,m){return getEffectiveVariable(y,m).reduce((s,i)=>s+(parseFloat(i.amount)||0),0);}
 function getTotalAssets(){return S.assets.reduce((s,a)=>s+(parseFloat(a.amount)||0),0);}
@@ -976,7 +972,7 @@ function renderDashboard(){
   document.getElementById('dash-stock-total').textContent=fmt(getTotalStockValue());
 
   renderDashExpand('income',getMonthData(cm.y,cm.m).income.map(i=>({name:i.name,cat:i.category,amount:i.amount,color:'green'})));
-  renderDashExpand('fixed',getMonthData(cm.y,cm.m).fixed.map(i=>({name:i.name+(i.isSavings?' 💜':''),cat:i.category,amount:i.amount,color:i.isSavings?'purple':'red'})));
+  renderDashExpand('fixed',getMonthData(cm.y,cm.m).fixed.map(i=>({name:i.name,cat:i.category,amount:i.amount,color:'red'})));
   renderDashExpand('variable',getEffectiveVariable(cm.y,cm.m).map(i=>({name:i.name,cat:i.category,amount:i.amount,color:'orange'})));
   renderDashAssetExpand();
 
@@ -1174,24 +1170,6 @@ function renderIncome(){
             <span class="item-cat">${item.category}</span>
           </div>
           <div class="item-right"><span class="item-amount orange">${fmt(item.amount)}</span></div>
-        </div>`;
-    }
-    if(item.autoFromAuto){
-      const autoObj=(S.automations||[]).find(a=>String(a.id)===String(item.autoId));
-      const dayLabel=autoObj?`매월 ${autoObj.billingDay}일`:'자동화';
-      return `
-        <div class="expense-item auto-item">
-          <div class="item-left">
-            <span class="item-name">${item.name}<span class="auto-tag auto">자동화</span></span>
-            <span class="item-cat">${item.category} · ${dayLabel}</span>
-          </div>
-          <div class="item-right">
-            <span class="item-amount orange">${fmt(item.amount)}</span>
-            <div class="item-actions">
-              <button class="icon-btn" onclick="App.editItem('variable','auto_${item.autoId}')">✏️</button>
-              <button class="icon-btn" onclick="App.deleteAutoVar('${item.autoId}')">🗑️</button>
-            </div>
-          </div>
         </div>`;
     }
     return `
@@ -2049,16 +2027,10 @@ function saveFixed(){
   const name=document.getElementById('mf-name').value.trim();
   const category=document.getElementById('mf-cat').value.trim()||'기타';
   const amount=parseFloat(document.getElementById('mf-amount').value)||0;
-  const isSavings=document.getElementById('mf-is-savings').checked;
   if(!name)return alert('항목명을 입력해주세요');
-  if(id){const i=data.fixed.find(i=>i.id==id);if(i){i.name=name;i.category=category;i.amount=amount;i.isSavings=isSavings;}}
-  else data.fixed.push({id:genId(),name,category,amount,isSavings});
+  if(id){const i=data.fixed.find(i=>i.id==id);if(i){i.name=name;i.category=category;i.amount=amount;}}
+  else data.fixed.push({id:genId(),name,category,amount});
   saveState();closeModal();renderIncome();renderDashboard();
-}
-
-function toggleVariableAuto(checked){
-  const wrap=document.getElementById('mv-auto-day-wrap');
-  if(wrap)wrap.style.display=checked?'block':'none';
 }
 
 function openVariableModal(){
@@ -2066,7 +2038,6 @@ function openVariableModal(){
   document.getElementById('mv-name').value='';
   document.getElementById('mv-cat').value='';
   document.getElementById('mv-amount').value='';
-  const cb=document.getElementById('mv-auto-check');if(cb){cb.checked=false;toggleVariableAuto(false);}
   document.getElementById('modal-variable-edit-label').textContent='추가';
   openModal('variable');
 }
@@ -2077,34 +2048,10 @@ function saveVariable(){
   const name=document.getElementById('mv-name').value.trim();
   const category=document.getElementById('mv-cat').value.trim()||'기타';
   const amount=parseFloat(document.getElementById('mv-amount').value)||0;
-  const isAuto=document.getElementById('mv-auto-check').checked;
-  const billingDay=parseInt(document.getElementById('mv-auto-day').value)||1;
   if(!name)return alert('항목명을 입력해주세요');
-  if(!S.automations)S.automations=[];
-
-  const isAutoId=String(id).startsWith('auto_');
-  if(isAutoId){
-    const autoId=String(id).replace('auto_','');
-    const a=S.automations.find(a=>String(a.id)===autoId);
-    if(a){
-      a.name=name;a.category=category;a.amount=amount;
-      if(isAuto){a.billingDay=billingDay;}
-      else{S.automations=S.automations.filter(a=>String(a.id)!==autoId);data.variable.push({id:genId(),name,category,amount});}
-    }
-  } else if(isAuto){
-    if(id)data.variable=data.variable.filter(i=>i.id!=id);
-    S.automations.push({id:genId(),name,category,amount,billingDay,active:true});
-  } else {
-    if(id){const i=data.variable.find(i=>i.id==id);if(i){i.name=name;i.category=category;i.amount=amount;}}
-    else data.variable.push({id:genId(),name,category,amount});
-  }
+  if(id){const i=data.variable.find(i=>i.id==id);if(i){i.name=name;i.category=category;i.amount=amount;}}
+  else data.variable.push({id:genId(),name,category,amount});
   saveState();closeModal();renderIncome();renderDashboard();
-}
-
-function deleteAutoVar(autoId){
-  if(!confirm('자동화 항목을 삭제하시겠어요?'))return;
-  S.automations=(S.automations||[]).filter(a=>String(a.id)!==String(autoId));
-  saveState();renderIncome();renderDashboard();
 }
 
 function _addCreditAutoEntries(card){
@@ -2284,27 +2231,16 @@ function editItem(type,id){
     document.getElementById('mf-name').value=i.name;
     document.getElementById('mf-cat').value=i.category;
     document.getElementById('mf-amount').value=i.amount;
-    document.getElementById('mf-is-savings').checked=!!i.isSavings;
     document.getElementById('modal-fixed-edit-label').textContent='수정';
     openModal('fixed');
   } else if(type==='variable'){
-    let item,isAutoItem=false;
-    const sId=String(id);
-    if(sId.startsWith('auto_')){
-      const autoId=sId.replace('auto_','');
-      item=(S.automations||[]).find(a=>String(a.id)===autoId);
-      isAutoItem=true;
-    } else {
-      const cm=S.currentMonths.income;item=getMonthData(cm.y,cm.m).variable.find(i=>i.id==id);
-    }
+    const cm=S.currentMonths.income;
+    const item=getMonthData(cm.y,cm.m).variable.find(i=>i.id==id);
     if(!item)return;
-    document.getElementById('modal-variable-id').value=sId;
+    document.getElementById('modal-variable-id').value=id;
     document.getElementById('mv-name').value=item.name;
     document.getElementById('mv-cat').value=item.category;
     document.getElementById('mv-amount').value=item.amount;
-    const cb=document.getElementById('mv-auto-check');
-    if(cb){cb.checked=isAutoItem;toggleVariableAuto(isAutoItem);}
-    if(isAutoItem){const d=document.getElementById('mv-auto-day');if(d)d.value=item.billingDay||'';}
     document.getElementById('modal-variable-edit-label').textContent='수정';
     openModal('variable');
   } else if(type==='asset'){
@@ -2551,9 +2487,70 @@ function renderSavingsRate(){
   if(fillEl){fillEl.style.width=pct+'%';fillEl.style.background=color;}
 }
 
+// ===== LEDGER AUTOMATION (monthly auto-register) =====
+function applyLedgerAutomations(y,m){
+  const automations=(S.automations||[]).filter(a=>a.active!==false);
+  if(automations.length===0)return;
+  const key=mkey(y,m);
+  if(!S.ledger[key])S.ledger[key]=[];
+  const skipped=S.autoSkippedIds||[];
+  let changed=false;
+  automations.forEach(a=>{
+    const autoLedgerId='auto_'+a.id+'_'+key;
+    const exists=S.ledger[key].some(e=>e.autoLedgerId===autoLedgerId);
+    if(!exists&&!skipped.includes(autoLedgerId)){
+      const day=Math.min(a.billingDay||1,28);
+      const dateStr=y+'-'+String(m).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+      S.ledger[key].push({
+        id:genId(),autoLedgerId,
+        date:dateStr,type:a.type||'expense',
+        category:a.category||'📦 기타',
+        memo:a.memo||a.name||'자동화',
+        tags:a.tags||[],
+        amount:a.amount
+      });
+      changed=true;
+    }
+  });
+  if(changed)saveState();
+}
+
+function _syncAutoModalCatSelect(selected){
+  const cats=S.ledgerCategories||[];
+  const makeOpts=(sel)=>cats.map(c=>`<option value="${c.name}" ${c.name===sel?'selected':''}>${c.name}</option>`).join('');
+  const modal=document.getElementById('ma2-cat-sel');
+  if(modal){
+    modal.innerHTML=makeOpts(selected);
+    if(selected&&!cats.some(c=>c.name===selected))modal.innerHTML=`<option value="${selected}" selected>${selected}</option>`+modal.innerHTML;
+  }
+  const inline=document.getElementById('la-cat-sel');
+  if(inline){inline.innerHTML=makeOpts('');}
+}
+
+function addAutoInline(){
+  const type=document.getElementById('la-type').value;
+  const billingDay=parseInt(document.getElementById('la-day').value)||1;
+  const category=(document.getElementById('la-cat-sel').value)||((S.ledgerCategories&&S.ledgerCategories[0])?S.ledgerCategories[0].name:'📦 기타');
+  const rawMemo=(document.getElementById('la-memo').value||'').trim();
+  const tags=extractTagsFromMemo(rawMemo);
+  const memo=cleanMemoText(rawMemo);
+  const amount=parseFloat(document.getElementById('la-amount').value)||0;
+  if(!memo||amount<=0)return alert('메모와 금액을 입력해주세요');
+  if(!S.automations)S.automations=[];
+  S.automations.push({id:genId(),type,billingDay,category,memo,tags,amount,name:memo,active:true});
+  saveState();
+  document.getElementById('la-day').value='';
+  document.getElementById('la-memo').value='';
+  document.getElementById('la-amount').value='';
+  const cm=S.currentMonths.ledger;
+  applyLedgerAutomations(cm.y,cm.m);
+  renderAutoList();renderLedger();renderDashboard();renderIncome();
+}
+
 // ===== LEDGER =====
 function renderLedger(){
   const cm=S.currentMonths.ledger;
+  applyLedgerAutomations(cm.y,cm.m);
   const lbl=document.getElementById('ledger-month-label');
   if(lbl)lbl.textContent=cm.y+'년 '+cm.m+'월';
   const key=mkey(cm.y,cm.m);
@@ -2627,6 +2624,8 @@ function renderLedger(){
           const cc=getCategoryColor(e.category);
           const tagPills=(e.tags&&e.tags.length>0)?`<div class="ledger-tag-pills">${e.tags.map(t=>{const col=getTagColorForCategory(e.category);return `<span class="ledger-tag-pill" style="--tag-bg:${col.bg};--tag-color:${col.color};" onclick="App.setTagFilter('${t}')">#${t}</span>`;}).join('')}</div>`:'';
           const creditBadge=e.creditAutoId?`<span class="ledger-credit-auto-badge" style="--cat-strip:${cc.strip};">💳 신용카드 자동</span>`:'';
+          const savingsBadge=(e.tags||[]).includes('저축')?`<span class="ledger-savings-badge">♥저축</span>`:'';
+          const autoLedgerBadge=e.autoLedgerId?`<span class="ledger-auto-ledger-badge">⚡ 자동화</span>`:'';
           return `
           <div class="ledger-entry ${e.type}" style="--cat-strip:${cc.strip};--cat-bg:${cc.bg};--cat-color:${cc.color};">
             <div class="ledger-cat-strip"></div>
@@ -2638,12 +2637,12 @@ function renderLedger(){
               </div>
             </div>
             <div class="ledger-entry-mid">
-              ${creditBadge}
+              ${creditBadge}${savingsBadge}${autoLedgerBadge}
             </div>
             <div class="ledger-entry-right">
               <span class="ledger-amount ${e.type==='income'?'green':'red'}">${e.type==='income'?'+':'−'}${fmt(e.amount)}</span>
               <button class="icon-btn" onclick="App.openEditLedgerModal('${key}',${e.id})" title="수정" style="font-size:13px;">✏️</button>
-              ${!e.creditAutoId?`<button class="icon-btn" onclick="App.deleteLedgerEntry('${key}',${e.id})">🗑️</button>`:''}
+              <button class="icon-btn" onclick="App.deleteLedgerEntry('${key}',${e.id})">🗑️</button>
             </div>
           </div>`;}).join('')}
       </div>`;
@@ -2671,6 +2670,11 @@ function addLedgerEntry(){
 }
 
 function deleteLedgerEntry(key,id){
+  const entry=(S.ledger[key]||[]).find(e=>e.id==id);
+  if(entry&&entry.autoLedgerId){
+    if(!S.autoSkippedIds)S.autoSkippedIds=[];
+    if(!S.autoSkippedIds.includes(entry.autoLedgerId))S.autoSkippedIds.push(entry.autoLedgerId);
+  }
   if(S.ledger[key])S.ledger[key]=S.ledger[key].filter(e=>e.id!=id);
   saveState();renderLedger();renderDashboard();renderIncome();
 }
@@ -2682,14 +2686,14 @@ function _syncLedgerCatSelects(selectedForEdit){
   const lqSel=document.getElementById('lq-category');
   if(lqSel){
     const cur=lqSel.value;
-    lqSel.innerHTML=cats.map(c=>`<option value="${c.name}">${c.isSavings?'💜 ':''}${c.name}</option>`).join('');
+    lqSel.innerHTML=cats.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
     if([...lqSel.options].some(o=>o.value===cur))lqSel.value=cur;
   }
   // 수정 모달 셀렉트 (selectedForEdit가 주어진 경우에만)
   if(selectedForEdit!==undefined){
     const mleSel=document.getElementById('mle-category');
     if(mleSel){
-      let opts=cats.map(c=>`<option value="${c.name}" ${c.name===selectedForEdit?'selected':''}>${c.isSavings?'💜 ':''}${c.name}</option>`).join('');
+      let opts=cats.map(c=>`<option value="${c.name}" ${c.name===selectedForEdit?'selected':''}>${c.name}</option>`).join('');
       if(selectedForEdit&&!cats.some(c=>c.name===selectedForEdit)){
         opts=`<option value="${selectedForEdit}" selected>${selectedForEdit}</option>`+opts;
       }
@@ -3128,42 +3132,43 @@ function renderSubscriptions(){
           </div>`).join('');
     }
   }
-  renderAutoList();
 }
 
 function renderAutoList(){
-  const el=document.getElementById('auto-list');if(!el)return;
+  const el=document.getElementById('ledger-auto-list');if(!el)return;
   const automations=S.automations||[];
   if(automations.length===0){
-    el.innerHTML=`<div class="sub-empty">자동화 항목을 추가하면 매달 변동지출에 자동으로 반영돼요.</div>`;return;
+    el.innerHTML=`<div class="sub-empty" style="padding:16px 0;color:var(--text-sub);font-size:13px;">자동화를 추가하면 매달 지정일에 가계부에 자동 등록돼요.</div>`;return;
   }
-  const totalAuto=automations.filter(a=>a.active!==false).reduce((s,a)=>s+a.amount,0);
-  el.innerHTML=`<div class="card" style="padding:14px 20px;margin-bottom:12px;background:var(--orange-light);border:1.5px solid var(--orange);"><span style="font-weight:700;color:var(--orange);">🤖 활성 자동화 월 합계: ${fmt(totalAuto)}</span></div>`+
-    automations.map(a=>`
-      <div class="auto-card ${a.active===false?'auto-inactive':''}">
-        <div class="auto-card-left">
-          <div class="auto-card-name">${a.name}</div>
-          <div class="auto-card-meta">${a.category} · 결제일 매월 <span class="auto-day-badge">${a.billingDay}일</span></div>
-        </div>
-        <div class="auto-card-right">
-          <div class="auto-card-amount">${fmt(a.amount)}</div>
-          <label class="sub-toggle-label"><input type="checkbox" ${a.active!==false?'checked':''} onchange="App.toggleAuto(${a.id},this.checked)"/> ${a.active!==false?'활성':'중지'}</label>
-          <button class="icon-btn" onclick="App.editAuto(${a.id})">✏️</button>
-          <button class="icon-btn" onclick="App.deleteAuto(${a.id})">🗑️</button>
-        </div>
-      </div>`).join('');
+  const active=automations.filter(a=>a.active!==false);
+  const totalOut=active.filter(a=>(a.type||'expense')!=='income').reduce((s,a)=>s+a.amount,0);
+  const totalIn=active.filter(a=>a.type==='income').reduce((s,a)=>s+a.amount,0);
+  let summaryParts=[];
+  if(totalOut>0)summaryParts.push(`<span style="color:var(--red);">지출 <strong>${fmt(totalOut)}</strong></span>`);
+  if(totalIn>0)summaryParts.push(`<span style="color:var(--green);">수입 <strong>${fmt(totalIn)}</strong></span>`);
+  const summary=summaryParts.length>0?`<div class="auto-summary-bar">⚡ 활성 자동화 월 합계: ${summaryParts.join(' · ')}</div>`:'';
+  el.innerHTML=summary+automations.map(a=>`
+    <div class="auto-card ${a.active===false?'auto-inactive':''}">
+      <div class="auto-card-left">
+        <div class="auto-card-name">${a.memo||a.name||'—'}<span class="auto-type-badge ${(a.type||'expense')==='income'?'income':'expense'}">${(a.type||'expense')==='income'?'수입':'지출'}</span></div>
+        <div class="auto-card-meta">${a.category} · 매월 <span class="auto-day-badge">${a.billingDay}일</span></div>
+      </div>
+      <div class="auto-card-right">
+        <div class="auto-card-amount ${(a.type||'expense')==='income'?'green':'red'}">${fmt(a.amount)}</div>
+        <label class="sub-toggle-label"><input type="checkbox" ${a.active!==false?'checked':''} onchange="App.toggleAuto(${a.id},this.checked)"/> ${a.active!==false?'활성':'중지'}</label>
+        <button class="icon-btn" onclick="App.editAuto(${a.id})">✏️</button>
+        <button class="icon-btn" onclick="App.deleteAuto(${a.id})">🗑️</button>
+      </div>
+    </div>`).join('');
 }
 
 function switchSubTab(tab){
   currentSubTab=tab;
   document.querySelectorAll('.sub-inner-tab').forEach((el,i)=>{
-    const tabs=['month','all','auto'];el.classList.toggle('active',tabs[i]===tab);
+    const tabs=['month','all'];el.classList.toggle('active',tabs[i]===tab);
   });
   document.querySelectorAll('.sub-tab-pane').forEach(el=>el.classList.remove('active'));
   const pane=document.getElementById('sub-pane-'+tab);if(pane)pane.classList.add('active');
-  const subBtn=document.getElementById('sub-add-btn');const autoBtn=document.getElementById('auto-add-btn');
-  if(subBtn)subBtn.style.display=tab==='auto'?'none':'';
-  if(autoBtn)autoBtn.style.display=tab==='auto'?'':'none';
 }
 
 function openSubModal(){
@@ -3202,52 +3207,85 @@ function toggleSub(id,active){const sub=S.subscriptions.find(s=>s.id==id);if(sub
 
 function openAutoModal(){
   document.getElementById('modal-auto-id').value='';
-  document.getElementById('ma2-name').value='';
-  document.getElementById('ma2-cat').value='';
+  document.getElementById('ma2-type').value='expense';
   document.getElementById('ma2-day').value='';
+  document.getElementById('ma2-memo').value='';
   document.getElementById('ma2-amount').value='';
   document.getElementById('modal-auto-edit-label').textContent='추가';
+  _syncAutoModalCatSelect('');
   openModal('auto');
 }
 
 function editAuto(id){
   const a=(S.automations||[]).find(a=>a.id==id);if(!a)return;
   document.getElementById('modal-auto-id').value=id;
-  document.getElementById('ma2-name').value=a.name;
-  document.getElementById('ma2-cat').value=a.category;
+  document.getElementById('ma2-type').value=a.type||'expense';
   document.getElementById('ma2-day').value=a.billingDay;
+  const memoWithTags=(a.tags&&a.tags.length>0)?((a.memo||a.name||'')+(a.tags.map(t=>' #'+t).join(''))).trim():(a.memo||a.name||'');
+  document.getElementById('ma2-memo').value=memoWithTags;
   document.getElementById('ma2-amount').value=a.amount;
   document.getElementById('modal-auto-edit-label').textContent='수정';
+  _syncAutoModalCatSelect(a.category);
   openModal('auto');
 }
 
 function saveAuto(){
   const id=document.getElementById('modal-auto-id').value;
-  const name=document.getElementById('ma2-name').value.trim();
-  const category=document.getElementById('ma2-cat').value.trim()||'기타';
+  const type=document.getElementById('ma2-type').value;
   const billingDay=parseInt(document.getElementById('ma2-day').value)||1;
+  const category=document.getElementById('ma2-cat-sel').value||(S.ledgerCategories&&S.ledgerCategories[0]?S.ledgerCategories[0].name:'📦 기타');
+  const rawMemo=document.getElementById('ma2-memo').value.trim();
+  const tags=extractTagsFromMemo(rawMemo);
+  const memo=cleanMemoText(rawMemo);
   const amount=parseFloat(document.getElementById('ma2-amount').value)||0;
-  if(!name||amount<=0)return alert('항목명과 금액을 입력해주세요');
+  if(!memo||amount<=0)return alert('메모와 금액을 입력해주세요');
   if(!S.automations)S.automations=[];
-  if(id){const a=S.automations.find(a=>a.id==id);if(a){a.name=name;a.category=category;a.billingDay=billingDay;a.amount=amount;}}
-  else S.automations.push({id:genId(),name,category,billingDay,amount,active:true});
-  saveState();closeModal();renderSubscriptions();renderIncome();renderDashboard();
+  if(id){
+    const a=S.automations.find(a=>a.id==id);
+    if(a){a.type=type;a.billingDay=billingDay;a.category=category;a.memo=memo;a.tags=tags;a.amount=amount;a.name=memo;}
+  } else {
+    S.automations.push({id:genId(),type,billingDay,category,memo,tags,amount,name:memo,active:true});
+  }
+  saveState();closeModal();
+  const cm=S.currentMonths.ledger;
+  applyLedgerAutomations(cm.y,cm.m);
+  renderAutoList();renderLedger();renderDashboard();renderIncome();
 }
 
 function deleteAuto(id){
-  if(!confirm('삭제하시겠어요?'))return;
+  if(!confirm('삭제하시겠어요?\n(지난 달 가계부 기록은 유지됩니다)'))return;
+  const now=new Date();
+  const curKey=mkey(now.getFullYear(),now.getMonth()+1);
+  Object.keys(S.ledger).forEach(key=>{
+    if(key>=curKey)S.ledger[key]=(S.ledger[key]||[]).filter(e=>e.autoLedgerId!==('auto_'+id+'_'+key));
+  });
   S.automations=(S.automations||[]).filter(a=>a.id!=id);
-  saveState();renderSubscriptions();renderIncome();renderDashboard();
+  saveState();renderAutoList();renderLedger();renderDashboard();renderIncome();
 }
 
-function toggleAuto(id,active){const a=(S.automations||[]).find(a=>a.id==id);if(a)a.active=active;saveState();renderSubscriptions();renderIncome();renderDashboard();}
+function toggleAuto(id,active){
+  const a=(S.automations||[]).find(a=>a.id==id);if(a)a.active=active;
+  saveState();
+  if(active){const cm=S.currentMonths.ledger;applyLedgerAutomations(cm.y,cm.m);}
+  renderAutoList();renderLedger();renderDashboard();renderIncome();
+}
+
+function toggleLedgerAutoPanel(){
+  const panel=document.getElementById('ledger-auto-panel');
+  const arrow=document.getElementById('ledger-auto-arrow');
+  if(!panel)return;
+  const hidden=panel.style.display==='none'||!panel.style.display;
+  panel.style.display=hidden?'block':'none';
+  if(arrow)arrow.textContent=hidden?'∧':'∨';
+  if(hidden){_syncAutoModalCatSelect('');renderAutoList();}
+}
 
 // ===== LEDGER CATEGORY MANAGEMENT (lcat) =====
 function renderLcatPanel(){
   const panel=document.getElementById('lcat-panel');if(!panel)return;
   const cats=S.ledgerCategories||[];
   if(cats.length===0){
-    panel.innerHTML=`<div class="lcat-empty">카테고리를 추가하세요. 💜저축 체크 시 해당 카테고리의 수입이 저축률에 반영됩니다.</div>
+    panel.innerHTML=`<div class="lcat-empty">카테고리를 추가하세요. 가계부 항목 분류에 사용됩니다.</div>
       <div style="margin-top:10px;display:flex;gap:8px;">
         <input id="lcat-new-name" class="lq-input" placeholder="카테고리명" style="flex:1;"
           onkeydown="if(event.key==='Enter')App.addLcatEntry()"/>
@@ -3260,10 +3298,6 @@ function renderLcatPanel(){
       <input class="lcat-name-input" type="text" value="${c.name}"
         onchange="App.saveLcatName(${c.id},this.value)"
         onkeydown="if(event.key==='Enter')this.blur()"/>
-      <label class="lcat-savings-label">
-        <input type="checkbox" ${c.isSavings?'checked':''} onchange="App.toggleLcatSavings(${c.id},this.checked)"/>
-        <span class="lcat-savings-badge ${c.isSavings?'on':''}">💜저축</span>
-      </label>
       <button class="icon-btn" onclick="App.deleteLcatEntry(${c.id})">🗑️</button>
     </div>`).join('')}
   </div>
@@ -3275,6 +3309,7 @@ function renderLcatPanel(){
 
   // 빠른입력 & 수정모달 카테고리 셀렉트를 S.ledgerCategories로 통일
   _syncLedgerCatSelects();
+  _syncAutoModalCatSelect('');
 }
 
 function addLcatEntry(){
@@ -3801,12 +3836,12 @@ function switchTab(tab){
 window.App={
   changeMonth,changeCalYear,toggleDashSection,applyMonthTheme,
   openModal,closeModal,openVariableModal,
-  toggleVariableAuto,deleteAutoVar,
   openBudgetModal,saveBudgetCategory,deleteBudgetCategory,
   openIncomeModal,openFixedModal,openDefaultMode,cancelDefaultMode,saveDefaultItems,deleteDefaultItems,saveIncome,saveFixed,saveVariable,saveCredit,openCreditModal,editCredit,saveAsset,saveStock,
   editItem,deleteItem,
   updateAssetAmount,updateStockPrice,updateStockBuyAmount,updateStockCurrentAmount,onStockTypeChange,renderAssetStocks,
   deleteCredit,toggleCreditPaid,markAllCreditPaidThisMonth,
+  applyLedgerAutomations,toggleLedgerAutoPanel,addAutoInline,
   openEditLedgerModal,saveLedgerEdit,onLedgerEditTypeChange,
   openCalModal,saveCalEvent,deleteCalEvent,
   openSavingsModal,editSavingsGoal,saveSavingsGoal,deleteSavingsGoal,updateSavedAmount,pickSavingsColor,
