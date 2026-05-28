@@ -528,7 +528,9 @@
             <option value="expense">지출</option>
             <option value="income">수입</option>
           </select>
-          <input type="number" id="la-day" class="lq-input" style="flex:0 0 54px;" placeholder="날짜" min="1" max="31"/>
+          <input type="number" id="la-day" class="lq-input" style="flex:0 0 50px;" placeholder="매월 일" min="1" max="31"/>
+          <input type="number" id="la-start-year" class="lq-input" style="flex:0 0 62px;" placeholder="시작년"/>
+          <input type="number" id="la-start-month" class="lq-input" style="flex:0 0 46px;" placeholder="월" min="1" max="12"/>
           <select id="la-cat-sel" class="lq-input" style="flex:1;"></select>
           <input type="text" id="la-memo" class="lq-input" style="flex:2;" placeholder="메모 #태그"/>
           <input type="text" inputmode="numeric" id="la-amount" class="lq-input" style="flex:1;" placeholder="금액" oninput="App.numInputFmt(this)"/>
@@ -819,6 +821,13 @@
     </select>
   </div>
   <div class="form-group"><label>날짜 (매월 몇 일)</label><input type="number" id="ma2-day" class="form-input" placeholder="15" min="1" max="31"/></div>
+  <div class="form-group">
+    <label>시작 월 (이 달부터 자동 등록)</label>
+    <div class="form-row">
+      <input type="number" id="ma2-start-year" class="form-input" placeholder="2026"/>
+      <input type="number" id="ma2-start-month" class="form-input" placeholder="1" min="1" max="12"/>
+    </div>
+  </div>
   <div class="form-group">
     <label>카테고리</label>
     <select id="ma2-cat-sel" class="form-input"></select>
