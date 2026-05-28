@@ -2590,14 +2590,31 @@ function deleteLedgerEntry(key,id){
   saveState();renderLedger();renderDashboard();renderIncome();
 }
 
-function _populateLedgerEditCat(type,selected){
-  const sel=document.getElementById('mle-category');if(!sel)return;
+// 가계부 카테고리 셀렉트 공통 동기화 — lq-category(빠른입력)와 mle-category(수정모달) 모두 S.ledgerCategories로 통일
+function _syncLedgerCatSelects(selectedForEdit){
   const cats=S.ledgerCategories||[];
-  let opts=cats.map(c=>`<option value="${c.name}" ${c.name===selected?'selected':''}>${c.isSavings?'💜 ':''}${c.name}</option>`).join('');
-  if(selected&&!cats.some(c=>c.name===selected)){
-    opts=`<option value="${selected}" selected>${selected}</option>`+opts;
+  // 빠른입력 셀렉트
+  const lqSel=document.getElementById('lq-category');
+  if(lqSel){
+    const cur=lqSel.value;
+    lqSel.innerHTML=cats.map(c=>`<option value="${c.name}">${c.isSavings?'💜 ':''}${c.name}</option>`).join('');
+    if([...lqSel.options].some(o=>o.value===cur))lqSel.value=cur;
   }
-  sel.innerHTML=opts;
+  // 수정 모달 셀렉트 (selectedForEdit가 주어진 경우에만)
+  if(selectedForEdit!==undefined){
+    const mleSel=document.getElementById('mle-category');
+    if(mleSel){
+      let opts=cats.map(c=>`<option value="${c.name}" ${c.name===selectedForEdit?'selected':''}>${c.isSavings?'💜 ':''}${c.name}</option>`).join('');
+      if(selectedForEdit&&!cats.some(c=>c.name===selectedForEdit)){
+        opts=`<option value="${selectedForEdit}" selected>${selectedForEdit}</option>`+opts;
+      }
+      mleSel.innerHTML=opts;
+    }
+  }
+}
+
+function _populateLedgerEditCat(type,selected){
+  _syncLedgerCatSelects(selected);
 }
 
 function onLedgerEditTypeChange(){
@@ -3160,13 +3177,8 @@ function renderLcatPanel(){
     <button class="lq-add-btn" onclick="App.addLcatEntry()">추가</button>
   </div>`;
 
-  // Sync lcat names to lq-category select
-  const sel=document.getElementById('lq-category');
-  if(sel){
-    const current=sel.value;
-    sel.innerHTML=cats.map(c=>`<option value="${c.name}">${c.isSavings?'💜 ':''}${c.name}</option>`).join('');
-    if([...sel.options].some(o=>o.value===current))sel.value=current;
-  }
+  // 빠른입력 & 수정모달 카테고리 셀렉트를 S.ledgerCategories로 통일
+  _syncLedgerCatSelects();
 }
 
 function addLcatEntry(){
