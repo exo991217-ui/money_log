@@ -388,7 +388,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
 .ledger-entry-mid{display:flex;align-items:center;padding:0 8px;flex-shrink:0}
 .ledger-entry-right{display:flex;align-items:center;gap:8px;padding:10px 12px;flex-shrink:0}
 .ledger-cat-badge{font-size:11px;font-weight:700;background:var(--cat-bg,var(--purple-light));color:var(--cat-color,#5E4BC4);border-radius:6px;padding:3px 9px;white-space:nowrap;flex-shrink:0}
-.ledger-credit-auto-badge{font-size:13px;flex-shrink:0;opacity:.7;}
+.ledger-credit-auto-badge{font-size:10px;font-weight:700;background:var(--cat-strip,#6C5CE7);color:white;border-radius:6px;padding:2px 7px;white-space:nowrap;opacity:.85}
 .ledger-memo{color:var(--text-main);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0;}
 .ledger-amount{font-weight:800;font-size:14px}
 .ledger-amount.green{color:var(--green)}
@@ -526,8 +526,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
 .ledger-auto-add-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 .auto-summary-bar{font-size:12.5px;font-weight:700;padding:8px 12px;background:#FFFDE7;border-radius:8px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
 /* Savings + auto badges in ledger */
-.ledger-savings-badge{font-size:10px;font-weight:800;background:#A29BFE;color:white;border-radius:6px;padding:1px 6px;white-space:nowrap;flex-shrink:0;}
-.ledger-auto-ledger-badge{font-size:12px;flex-shrink:0;opacity:.7;}
+.ledger-savings-badge{font-size:10px;font-weight:800;background:#A29BFE;color:white;border-radius:6px;padding:2px 7px;white-space:nowrap;}
+.ledger-auto-ledger-badge{font-size:10px;font-weight:700;background:#F9CA24;color:#7A5800;border-radius:6px;padding:2px 7px;white-space:nowrap;}
 /* auto type badge */
 .auto-type-badge{font-size:10px;font-weight:700;border-radius:6px;padding:2px 7px;margin-left:6px;white-space:nowrap}
 .auto-type-badge.expense{background:#FFEAEA;color:var(--red)}
@@ -1098,9 +1098,11 @@ body { background: var(--t-bg) !important; }
 /* 기본값 설정 모드 — 항목에 체크박스 + 드래그 핸들 표시 */
 .default-mode-item{
   display:flex;align-items:center;gap:8px;
+  justify-content:flex-start;
   background:#FFFDE7;border-radius:8px;padding:2px 4px;
   transition:opacity .15s,box-shadow .15s;
 }
+.default-mode-item .item-left{flex:1;min-width:0;}
 .default-chk{position:absolute;opacity:0;width:0;height:0;}
 .dm-chk-label{
   position:relative;display:flex;align-items:center;
