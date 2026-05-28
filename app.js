@@ -1170,7 +1170,7 @@ function renderIncome(){
   document.getElementById('income-list').innerHTML=data.income.map(item=>{
     const da=_defaultMode?` data-drag-id="${item.id}" draggable="true" ondragstart="App._dmDragStart(event,'income',${item.id})" ondragover="App._dmDragOver(event,'income')" ondragleave="App._dmDragLeave(event)" ondrop="App._dmDrop(event,'income',${item.id})" ondragend="App._dmDragEnd(event)"`:'';
     return `<div class="expense-item${_defaultMode?' default-mode-item':''}"${da}>
-      ${_defaultMode?`<span class="dm-handle" ontouchstart="App._dmTouchStart(event,'income-list')">⠿</span><input type="checkbox" class="default-chk default-chk-income" value="${item.id}" ${isDefaultIncome(item)?'checked':''}>`:''}
+      ${_defaultMode?`<span class="dm-handle" ontouchstart="App._dmTouchStart(event,'income-list')">⠿</span><label class="dm-chk-label"><input type="checkbox" class="default-chk default-chk-income" value="${item.id}" ${isDefaultIncome(item)?'checked':''}><span class="dm-chk-indicator"></span></label>`:''}
       <div class="item-left"><span class="item-name">${item.name}</span><span class="item-cat">${item.category}</span></div>
       <div class="item-right">
         <span class="item-amount green">${fmt(item.amount)}</span>
@@ -1183,7 +1183,7 @@ function renderIncome(){
   document.getElementById('fixed-list').innerHTML=data.fixed.map(item=>{
     const da=_defaultMode?` data-drag-id="${item.id}" draggable="true" ondragstart="App._dmDragStart(event,'fixed',${item.id})" ondragover="App._dmDragOver(event,'fixed')" ondragleave="App._dmDragLeave(event)" ondrop="App._dmDrop(event,'fixed',${item.id})" ondragend="App._dmDragEnd(event)"`:'';
     return `<div class="expense-item${_defaultMode?' default-mode-item':''}"${da}>
-      ${_defaultMode?`<span class="dm-handle" ontouchstart="App._dmTouchStart(event,'fixed-list')">⠿</span><input type="checkbox" class="default-chk default-chk-fixed" value="${item.id}" ${isDefaultFixed(item)?'checked':''}>`:''}
+      ${_defaultMode?`<span class="dm-handle" ontouchstart="App._dmTouchStart(event,'fixed-list')">⠿</span><label class="dm-chk-label"><input type="checkbox" class="default-chk default-chk-fixed" value="${item.id}" ${isDefaultFixed(item)?'checked':''}><span class="dm-chk-indicator"></span></label>`:''}
       <div class="item-left">
         <span class="item-name">${item.name}${item.isSavings?'<span class="savings-tag">💜저축</span>':''}</span>
         <span class="item-cat">${item.category}</span>
@@ -1267,8 +1267,8 @@ function renderCredit(){
     cardGroups[card.card].push(card);
   }
   list.innerHTML=Object.entries(cardGroups).map(([cardName,items])=>{
-    const oneTimeItems=items.filter(c=>c.months===1);
-    const installItems=items.filter(c=>c.months>1);
+    const oneTimeItems=items.filter(c=>c.months===1&&isCardDueInMonth(c,cm.y,cm.m));
+    const installItems=items.filter(c=>c.months>1&&isCardDueInMonth(c,cm.y,cm.m));
     const groupRemaining=items.reduce((s,c)=>s+getCardTotalRemaining(c),0);
 
     // 이번 달 이용내역 section (일시불 / months=1)
@@ -2664,10 +2664,10 @@ function renderLedger(){
         </div>
         ${items.map(e=>{
           const cc=getCategoryColor(e.category);
-          const tagPills=(e.tags&&e.tags.length>0)?`<div class="ledger-tag-pills">${e.tags.map(t=>{const col=getTagColorForCategory(e.category);return `<span class="ledger-tag-pill" style="--tag-bg:${col.bg};--tag-color:${col.color};" onclick="App.setTagFilter('${t}')">#${t}</span>`;}).join('')}</div>`:'';
-          const creditBadge=e.creditAutoId?`<span class="ledger-credit-auto-badge" style="--cat-strip:${cc.strip};">💳 신용카드 자동</span>`:'';
+          const tagPills=(e.tags&&e.tags.length>0)?e.tags.map(t=>{const col=getTagColorForCategory(e.category);return `<span class="ledger-tag-pill" style="--tag-bg:${col.bg};--tag-color:${col.color};" onclick="App.setTagFilter('${t}')">#${t}</span>`;}).join(''):'';
+          const creditBadge=e.creditAutoId?`<span class="ledger-credit-auto-badge" style="--cat-strip:${cc.strip};">💳</span>`:'';
           const savingsBadge=(e.tags||[]).includes('저축')?`<span class="ledger-savings-badge">♥저축</span>`:'';
-          const autoLedgerBadge=e.autoLedgerId?`<span class="ledger-auto-ledger-badge">⚡ 자동화</span>`:'';
+          const autoLedgerBadge=e.autoLedgerId?`<span class="ledger-auto-ledger-badge">⚡</span>`:'';
           return `
           <div class="ledger-entry ${e.type}" style="--cat-strip:${cc.strip};--cat-bg:${cc.bg};--cat-color:${cc.color};">
             <div class="ledger-cat-strip"></div>
@@ -2677,8 +2677,6 @@ function renderLedger(){
                 <span class="ledger-memo">${e.memo||'—'}</span>
                 ${tagPills}
               </div>
-            </div>
-            <div class="ledger-entry-mid">
               ${creditBadge}${savingsBadge}${autoLedgerBadge}
             </div>
             <div class="ledger-entry-right">
