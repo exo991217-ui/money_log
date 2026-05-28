@@ -233,18 +233,30 @@ window.FB_MERGE = function(fbData) {
 
 // ===== MONTHLY THEMES =====
 const MONTH_THEMES = {
-  1:  { t1:'#1A237E', t2:'#42A5F5', bg:'#EEF4FF', border:'#DDEAFF', name:'1월 딥네이비' },
-  2:  { t1:'#AD1457', t2:'#F48FB1', bg:'#FFF0F5', border:'#FFD6E7', name:'2월 로즈핑크' },
-  3:  { t1:'#1B5E20', t2:'#66BB6A', bg:'#F0FFF4', border:'#C8EDD9', name:'3월 민트그린' },
-  4:  { t1:'#6A1B9A', t2:'#CE93D8', bg:'#F9F0FF', border:'#E8D5F5', name:'4월 라벤더' },
-  5:  { t1:'#5E4BC4', t2:'#A29BFE', bg:'#F7F4FF', border:'#EEE9FF', name:'5월 퍼플' },
-  6:  { t1:'#0277BD', t2:'#4FC3F7', bg:'#EFF8FF', border:'#C9E8FF', name:'6월 오션블루' },
-  7:  { t1:'#BF360C', t2:'#FF7043', bg:'#FFF4F0', border:'#FFD4C4', name:'7월 코랄핑크' },
-  8:  { t1:'#212121', t2:'#757575', bg:'#F4F4F4', border:'#E0E0E0', name:'8월 다크블랙' },
-  9:  { t1:'#E65100', t2:'#FFA726', bg:'#FFF8EE', border:'#FFE0C0', name:'9월 앰버오렌지' },
-  10: { t1:'#B71C1C', t2:'#EF9A9A', bg:'#FFF5F5', border:'#FFD0D0', name:'10월 버건디레드' },
-  11: { t1:'#4E342E', t2:'#A1887F', bg:'#FDF5F0', border:'#EDD9C8', name:'11월 웜브라운' },
-  12: { t1:'#1B5E20', t2:'#00BCD4', bg:'#F0FBF5', border:'#C5EDD6', name:'12월 에메랄드' },
+  1:  { t1:'#1A237E', t2:'#42A5F5', bg:'#EEF4FF', border:'#DDEAFF', name:'1월 딥네이비',
+        cards:{ income:'#42A5F5', fixed:'#EF7B74', variable:'#FFB347', budget:'#7986CB' } },
+  2:  { t1:'#AD1457', t2:'#F48FB1', bg:'#FFF0F5', border:'#FFD6E7', name:'2월 로즈핑크',
+        cards:{ income:'#F48FB1', fixed:'#BA68C8', variable:'#FFB74D', budget:'#4DB6AC' } },
+  3:  { t1:'#1B5E20', t2:'#66BB6A', bg:'#F0FFF4', border:'#C8EDD9', name:'3월 민트그린',
+        cards:{ income:'#66BB6A', fixed:'#EF7B74', variable:'#FFA726', budget:'#42A5F5' } },
+  4:  { t1:'#6A1B9A', t2:'#CE93D8', bg:'#F9F0FF', border:'#E8D5F5', name:'4월 라벤더',
+        cards:{ income:'#CE93D8', fixed:'#F48FB1', variable:'#FFCC80', budget:'#80DEEA' } },
+  5:  { t1:'#5E4BC4', t2:'#A29BFE', bg:'#F7F4FF', border:'#EEE9FF', name:'5월 퍼플',
+        cards:{ income:'#A29BFE', fixed:'#F06292', variable:'#FDCB6E', budget:'#74B9FF' } },
+  6:  { t1:'#0277BD', t2:'#4FC3F7', bg:'#EFF8FF', border:'#C9E8FF', name:'6월 오션블루',
+        cards:{ income:'#4FC3F7', fixed:'#EF7B74', variable:'#FFA726', budget:'#80CBC4' } },
+  7:  { t1:'#BF360C', t2:'#FF7043', bg:'#FFF4F0', border:'#FFD4C4', name:'7월 코랄핑크',
+        cards:{ income:'#FF7043', fixed:'#CE93D8', variable:'#FFCA28', budget:'#7CB88A' } },
+  8:  { t1:'#212121', t2:'#757575', bg:'#F4F4F4', border:'#E0E0E0', name:'8월 다크블랙',
+        cards:{ income:'#90A4AE', fixed:'#EF9A9A', variable:'#FFF176', budget:'#80DEEA' } },
+  9:  { t1:'#E65100', t2:'#FFA726', bg:'#FFF8EE', border:'#FFE0C0', name:'9월 앰버오렌지',
+        cards:{ income:'#FFA726', fixed:'#EC407A', variable:'#FFEE58', budget:'#4DB6AC' } },
+  10: { t1:'#B71C1C', t2:'#EF9A9A', bg:'#FFF5F5', border:'#FFD0D0', name:'10월 버건디레드',
+        cards:{ income:'#EF9A9A', fixed:'#CE93D8', variable:'#FFCC80', budget:'#80CBC4' } },
+  11: { t1:'#4E342E', t2:'#A1887F', bg:'#FDF5F0', border:'#EDD9C8', name:'11월 웜브라운',
+        cards:{ income:'#A1887F', fixed:'#CE93D8', variable:'#FFCC80', budget:'#A5D6A7' } },
+  12: { t1:'#1B5E20', t2:'#00BCD4', bg:'#F0FBF5', border:'#C5EDD6', name:'12월 에메랄드',
+        cards:{ income:'#00BCD4', fixed:'#F06292', variable:'#FFCA28', budget:'#90CAF9' } },
 };
 
 function applyMonthTheme(m) {
@@ -255,6 +267,13 @@ function applyMonthTheme(m) {
   root.setProperty('--t-bg', t.bg);
   root.setProperty('--t-border', t.border);
   root.setProperty('--t-light', t.bg);
+  // 카드 상단 띠 컬러 — 테마별 보조 컬러 세트 적용
+  if(t.cards) {
+    root.setProperty('--card-income-strip', t.cards.income);
+    root.setProperty('--card-fixed-strip', t.cards.fixed);
+    root.setProperty('--card-var-strip', t.cards.variable);
+    root.setProperty('--card-budget-strip', t.cards.budget);
+  }
   // bg도 함께 변경
   document.body.style.background = t.bg;
 }
@@ -673,21 +692,62 @@ function renderFundCalc(){
       listEl.innerHTML=(fc.items||[]).map(item=>`
         <div class="fc-item">
           <input class="fc-item-name" type="text" value="${(item.name||'').replace(/"/g,'&quot;')}" placeholder="항목명"
-            onchange="App.updateFundItem(${item.id},'name',this.value)"/>
+            onchange="App.updateFundItem(${item.id},'name',this.value)"
+            onkeydown="if(event.key==='Enter')this.blur()"/>
           <div class="fc-item-amount-wrap">
             <input class="fc-item-amount" type="number" value="${item.amount||''}" placeholder="0"
-              oninput="App.updateFundItem(${item.id},'amount',this.value)"/>
+              oninput="App.previewFundItem()"
+              onchange="App.updateFundItem(${item.id},'amount',this.value)"
+              onkeydown="if(event.key==='Enter')App.updateFundItem(${item.id},'amount',this.value)"/>
             <span class="fc-item-unit">원</span>
           </div>
           <button class="icon-btn" onclick="App.deleteFundItem(${item.id})">🗑️</button>
         </div>`).join('');
     }
   }
+  _fcSummary();
+}
+
+// 합계 표시만 갱신 (DOM 재렌더링 없음 — focus 유지)
+function _fcSummary(){
+  const fc=S.fundCalc||{amount:0,items:[]};
   const totalUsed=(fc.items||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0);
   const remaining=(parseFloat(fc.amount)||0)-totalUsed;
   const over=remaining<0;
   const tuEl=document.getElementById('fc-total-used');
   if(tuEl)tuEl.textContent=fmt(totalUsed);
+  const rvEl=document.getElementById('fc-remaining-val');
+  if(rvEl){rvEl.textContent=fmt(Math.abs(remaining));rvEl.style.color=over?'var(--red)':'var(--green)';}
+  const obEl=document.getElementById('fc-over-badge');
+  if(obEl)obEl.style.display=over?'inline-block':'none';
+}
+
+// oninput: 현재 DOM 값 기준으로 합계 미리보기 (state 저장 없음 → focus 유지)
+function previewFundItem(){
+  const fc=S.fundCalc||{amount:0,items:[]};
+  let total=0;
+  document.querySelectorAll('.fc-item-amount').forEach(el=>{total+=parseFloat(el.value)||0;});
+  const remaining=(parseFloat(fc.amount)||0)-total;
+  const over=remaining<0;
+  const tuEl=document.getElementById('fc-total-used');
+  if(tuEl)tuEl.textContent=fmt(total);
+  const rvEl=document.getElementById('fc-remaining-val');
+  if(rvEl){rvEl.textContent=fmt(Math.abs(remaining));rvEl.style.color=over?'var(--red)':'var(--green)';}
+  const obEl=document.getElementById('fc-over-badge');
+  if(obEl)obEl.style.display=over?'inline-block':'none';
+}
+
+// oninput on main amount: 보유금액 표시 + 합계 미리보기 (state 저장 없음)
+function previewFundAmount(val){
+  const amount=parseFloat(val)||0;
+  const dispEl=document.getElementById('fc-amount-display');
+  if(dispEl)dispEl.textContent=amount>0?'보유: '+fmt(amount):'';
+  let total=0;
+  document.querySelectorAll('.fc-item-amount').forEach(el=>{total+=parseFloat(el.value)||0;});
+  const remaining=amount-total;
+  const over=remaining<0;
+  const tuEl=document.getElementById('fc-total-used');
+  if(tuEl)tuEl.textContent=fmt(total);
   const rvEl=document.getElementById('fc-remaining-val');
   if(rvEl){rvEl.textContent=fmt(Math.abs(remaining));rvEl.style.color=over?'var(--red)':'var(--green)';}
   const obEl=document.getElementById('fc-over-badge');
@@ -717,7 +777,9 @@ function updateFundItem(id,field,value){
   const item=(S.fundCalc.items||[]).find(i=>i.id==id);
   if(!item)return;
   item[field]=field==='amount'?(parseFloat(value)||0):value;
-  saveState();renderFundCalc();
+  saveState();
+  // amount 저장 시 합계만 갱신 (list 재렌더 금지 — focus 유지)
+  _fcSummary();
 }
 
 function resetFundCalc(){
@@ -1554,7 +1616,8 @@ function renderFoodPanel(d){
       <div class="food-panel-field">
         <label>📌 특별 일정</label>
         <div class="food-panel-input-row">
-          <input type="text" id="fp-special" class="form-input" value="${(dd.special||'').replace(/"/g,'&quot;')}" placeholder="연차, 생일파티..."/>
+          <input type="text" id="fp-special" class="form-input" value="${(dd.special||'').replace(/"/g,'&quot;')}" placeholder="연차, 생일파티..."
+            onkeydown="if(event.key==='Enter')App.saveFoodField(${d},'special')"/>
           <button class="food-save-field-btn" onclick="App.saveFoodField(${d},'special')">저장</button>
         </div>
         <div class="food-field-feedback" id="fp-special-feedback"></div>
@@ -1562,7 +1625,8 @@ function renderFoodPanel(d){
       <div class="food-panel-field">
         <label>🍽️ 식사 메모</label>
         <div class="food-panel-input-row">
-          <input type="text" id="fp-memo" class="form-input" value="${(dd.memo||'').replace(/"/g,'&quot;')}" placeholder="배달, 된장찌개..."/>
+          <input type="text" id="fp-memo" class="form-input" value="${(dd.memo||'').replace(/"/g,'&quot;')}" placeholder="배달, 된장찌개..."
+            onkeydown="if(event.key==='Enter')App.saveFoodField(${d},'memo')"/>
           <button class="food-save-field-btn" onclick="App.saveFoodField(${d},'memo')">저장</button>
         </div>
         <div class="food-field-feedback" id="fp-memo-feedback"></div>
@@ -1570,7 +1634,8 @@ function renderFoodPanel(d){
       <div class="food-panel-field">
         <label>💰 식비 금액 (원)</label>
         <div class="food-panel-input-row">
-          <input type="number" id="fp-amount" class="form-input" value="${dd.amount||''}" placeholder="15000"/>
+          <input type="number" id="fp-amount" class="form-input" value="${dd.amount||''}" placeholder="15000"
+            onkeydown="if(event.key==='Enter')App.saveFoodField(${d},'amount')"/>
           <button class="food-save-field-btn" onclick="App.saveFoodField(${d},'amount')">저장</button>
         </div>
         <div class="food-field-feedback" id="fp-amount-feedback"></div>
@@ -2789,14 +2854,17 @@ function renderLcatPanel(){
   if(cats.length===0){
     panel.innerHTML=`<div class="lcat-empty">카테고리를 추가하세요. 💜저축 체크 시 해당 카테고리의 수입이 저축률에 반영됩니다.</div>
       <div style="margin-top:10px;display:flex;gap:8px;">
-        <input id="lcat-new-name" class="lq-input" placeholder="카테고리명" style="flex:1;"/>
+        <input id="lcat-new-name" class="lq-input" placeholder="카테고리명" style="flex:1;"
+          onkeydown="if(event.key==='Enter')App.addLcatEntry()"/>
         <button class="lq-add-btn" onclick="App.addLcatEntry()">추가</button>
       </div>`;
     return;
   }
   panel.innerHTML=`<div class="lcat-list">${cats.map(c=>`
     <div class="lcat-row">
-      <input class="lcat-name-input" type="text" value="${c.name}" onchange="App.saveLcatName(${c.id},this.value)"/>
+      <input class="lcat-name-input" type="text" value="${c.name}"
+        onchange="App.saveLcatName(${c.id},this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()"/>
       <label class="lcat-savings-label">
         <input type="checkbox" ${c.isSavings?'checked':''} onchange="App.toggleLcatSavings(${c.id},this.checked)"/>
         <span class="lcat-savings-badge ${c.isSavings?'on':''}">💜저축</span>
@@ -2805,7 +2873,8 @@ function renderLcatPanel(){
     </div>`).join('')}
   </div>
   <div style="display:flex;gap:8px;margin-top:10px;">
-    <input id="lcat-new-name" class="lq-input" placeholder="새 카테고리명" style="flex:1;"/>
+    <input id="lcat-new-name" class="lq-input" placeholder="새 카테고리명" style="flex:1;"
+      onkeydown="if(event.key==='Enter')App.addLcatEntry()"/>
     <button class="lq-add-btn" onclick="App.addLcatEntry()">추가</button>
   </div>`;
 
@@ -3366,6 +3435,7 @@ window.App={
   toggleStockAssetDirect,toggleCalFoodSync,
   saveRemainingBudget,editRemainingLabel,
   renderFundCalc,setFundAmount,addFundItem,deleteFundItem,updateFundItem,
+  previewFundItem,previewFundAmount,
   resetFundCalc,toggleAssetSelector,applyAssetSelection,
   toggleBudgetSync,
   addLcatEntry,deleteLcatEntry,toggleLcatSavings,saveLcatName,toggleLcatPanel,
@@ -3378,6 +3448,17 @@ document.addEventListener('DOMContentLoaded',()=>{
     item.addEventListener('click',()=>switchTab(item.dataset.tab));
   });
   document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>e.stopPropagation()));
+
+  // 모달 내 Enter 키 → 저장 버튼 자동 클릭
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Enter')return;
+    const active=document.activeElement;
+    if(!active||active.tagName==='TEXTAREA'||active.tagName==='SELECT')return;
+    const modal=document.querySelector('.modal.active');
+    if(!modal||!modal.contains(active))return;
+    const saveBtn=modal.querySelector('.btn-save');
+    if(saveBtn&&!saveBtn.disabled){e.preventDefault();saveBtn.click();}
+  });
 
   loadState();
   // 항상 초기 렌더링 실행 (로컬 데이터 or 기본값 표시)
