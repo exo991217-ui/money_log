@@ -975,6 +975,28 @@ function cancelDefaultMode(){
   _defaultMode=false;
   renderIncome();
 }
+
+// 현재 달 포함 이후 모든 달에 기본값 항목을 추가/업데이트 (직접 추가한 항목은 유지)
+function _propagateDefaultsToFutureMonths(fromY,fromM){
+  const di=S.defaultItems||{income:[],fixed:[]};
+  Object.keys(S.monthlyData).forEach(key=>{
+    const parts=key.split('-');
+    const ky=parseInt(parts[0]),km=parseInt(parts[1]);
+    if(ky<fromY||(ky===fromY&&km<fromM))return;
+    const mdata=S.monthlyData[key];
+    di.income.forEach(def=>{
+      const ex=mdata.income.find(i=>i.name===def.name);
+      if(ex){ex.category=def.category;ex.amount=def.amount;}
+      else{mdata.income.push({...def,id:genId()});}
+    });
+    di.fixed.forEach(def=>{
+      const ex=mdata.fixed.find(i=>i.name===def.name);
+      if(ex){ex.category=def.category;ex.amount=def.amount;ex.isSavings=def.isSavings;}
+      else{mdata.fixed.push({...def,id:genId()});}
+    });
+  });
+}
+
 function saveDefaultItems(){
   const cm=S.currentMonths.income;
   const data=getMonthData(cm.y,cm.m);
@@ -983,6 +1005,38 @@ function saveDefaultItems(){
   if(!S.defaultItems)S.defaultItems={income:[],fixed:[]};
   S.defaultItems.income=data.income.filter(i=>checkedIncome.includes(String(i.id))).map(i=>({name:i.name,category:i.category,amount:i.amount}));
   S.defaultItems.fixed=data.fixed.filter(i=>checkedFixed.includes(String(i.id))).map(i=>({name:i.name,category:i.category,amount:i.amount,isSavings:i.isSavings}));
+  // 이후 달에도 즉시 반영
+  _propagateDefaultsToFutureMonths(cm.y,cm.m);
+  saveState();
+  _defaultMode=false;
+  renderIncome();
+}
+
+// 체크한 항목을 기본값에서 제거하고 이후 달에서도 삭제
+function deleteDefaultItems(){
+  const cm=S.currentMonths.income;
+  const data=getMonthData(cm.y,cm.m);
+  const checkedIncome=Array.from(document.querySelectorAll('.default-chk-income:checked')).map(el=>el.value);
+  const checkedFixed=Array.from(document.querySelectorAll('.default-chk-fixed:checked')).map(el=>el.value);
+  if(checkedIncome.length===0&&checkedFixed.length===0){
+    alert('삭제할 항목을 체크해주세요.');return;
+  }
+  const incNames=data.income.filter(i=>checkedIncome.includes(String(i.id))).map(i=>i.name);
+  const fixNames=data.fixed.filter(i=>checkedFixed.includes(String(i.id))).map(i=>i.name);
+  // 기본값에서 제거
+  if(S.defaultItems){
+    S.defaultItems.income=(S.defaultItems.income||[]).filter(i=>!incNames.includes(i.name));
+    S.defaultItems.fixed=(S.defaultItems.fixed||[]).filter(i=>!fixNames.includes(i.name));
+  }
+  // 현재 달 포함 이후 달에서 해당 항목 삭제
+  Object.keys(S.monthlyData).forEach(key=>{
+    const parts=key.split('-');
+    const ky=parseInt(parts[0]),km=parseInt(parts[1]);
+    if(ky<cm.y||(ky===cm.y&&km<cm.m))return;
+    const mdata=S.monthlyData[key];
+    mdata.income=mdata.income.filter(i=>!incNames.includes(i.name));
+    mdata.fixed=mdata.fixed.filter(i=>!fixNames.includes(i.name));
+  });
   saveState();
   _defaultMode=false;
   renderIncome();
@@ -3413,7 +3467,7 @@ window.App={
   openModal,closeModal,openVariableModal,
   toggleVariableAuto,deleteAutoVar,
   openBudgetModal,saveBudgetCategory,deleteBudgetCategory,
-  openIncomeModal,openFixedModal,openDefaultMode,cancelDefaultMode,saveDefaultItems,saveIncome,saveFixed,saveVariable,saveCredit,saveAsset,saveStock,
+  openIncomeModal,openFixedModal,openDefaultMode,cancelDefaultMode,saveDefaultItems,deleteDefaultItems,saveIncome,saveFixed,saveVariable,saveCredit,saveAsset,saveStock,
   editItem,deleteItem,
   updateAssetAmount,updateStockPrice,updateStockBuyAmount,updateStockCurrentAmount,onStockTypeChange,renderAssetStocks,
   deleteCredit,toggleCreditPaid,
