@@ -376,16 +376,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
 .ledger-import-btn:hover{background:var(--green);color:white}
 .ledger-filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .ledger-filter-chip{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);background:white;color:var(--text-sub);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
-.ledger-filter-chip.active{background:var(--purple-light);color:#5E4BC4;border-color:#A29BFE}
+.ledger-filter-chip:hover{background:var(--chip-bg,var(--purple-light));color:var(--chip-color,#5E4BC4);border-color:var(--chip-strip,#A29BFE)}
+.ledger-filter-chip.active{background:var(--chip-bg,var(--purple-light));color:var(--chip-color,#5E4BC4);border-color:var(--chip-strip,#A29BFE);border-left:3px solid var(--chip-strip,#A29BFE)}
+.ledger-filter-credit{border-color:#6C5CE7;color:#4834d4!important}
+.ledger-filter-credit.active{background:#F0EEFF!important;color:#4834d4!important;border-color:#6C5CE7!important;border-left:3px solid #6C5CE7!important}
 .ledger-date-group{margin-bottom:16px}
 .ledger-date-header{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:4px;font-size:13px;font-weight:700}
-.ledger-entry{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:white;border-radius:var(--radius-sm);border:1.5px solid var(--border);margin-bottom:4px;font-size:13px}
-.ledger-entry.income{border-left:3px solid var(--green)}
-.ledger-entry.expense{border-left:3px solid var(--red)}
-.ledger-entry-left{display:flex;align-items:center;gap:10px}
-.ledger-entry-right{display:flex;align-items:center;gap:10px}
-.ledger-cat-badge{font-size:11px;font-weight:700;background:var(--purple-light);color:#5E4BC4;border-radius:6px;padding:2px 8px}
-.ledger-memo{color:var(--text-main);font-weight:500}
+.ledger-entry{display:flex;align-items:center;gap:0;padding:0;background:white;border-radius:var(--radius-sm);border:1.5px solid var(--border);margin-bottom:5px;font-size:13px;overflow:hidden}
+.ledger-cat-strip{width:5px;min-width:5px;align-self:stretch;background:var(--cat-strip,var(--purple));flex-shrink:0}
+.ledger-entry-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0;padding:10px 12px}
+.ledger-entry-mid{display:flex;align-items:center;padding:0 8px;flex-shrink:0}
+.ledger-entry-right{display:flex;align-items:center;gap:8px;padding:10px 12px;flex-shrink:0}
+.ledger-cat-badge{font-size:11px;font-weight:700;background:var(--cat-bg,var(--purple-light));color:var(--cat-color,#5E4BC4);border-radius:6px;padding:3px 9px;white-space:nowrap;flex-shrink:0}
+.ledger-credit-auto-badge{font-size:10px;font-weight:700;background:var(--cat-strip,#6C5CE7);color:white;border-radius:6px;padding:2px 7px;white-space:nowrap;opacity:.85}
+.ledger-memo{color:var(--text-main);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}
 .ledger-amount{font-weight:800;font-size:14px}
 .ledger-amount.green{color:var(--green)}
 .ledger-amount.red{color:var(--red)}
