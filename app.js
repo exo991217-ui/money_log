@@ -618,7 +618,7 @@ function renderBudget(y,m){
           </div>
           <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
             <span class="budget-cat-amounts">${fmt(spent)}<span class="budget-cat-of"> / ${fmt(effectiveBudget)}</span></span>
-            <button class="budget-link-text-btn${hasLinked?' linked':''}" onclick="App.openBudgetCatSyncModal(${cat.id})">🔗 카테고리 연동</button>
+            <button class="budget-link-text-btn${hasLinked?' linked':''}" onclick="App.openBudgetCatSyncModal(${cat.id})">🔗</button>
             <button class="icon-btn" onclick="App.openBudgetModal(${cat.id})">✏️</button>
             <button class="icon-btn" onclick="App.deleteBudgetCategory(${cat.id})">🗑️</button>
           </div>
