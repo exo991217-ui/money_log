@@ -1728,53 +1728,6 @@ function renderAssets(){
 }
 
 // ===== STOCKS =====
-function renderStocks(){
-  const totalVal=getTotalStockValue();
-  const totalCost=getTotalStockCost();
-  const totalProfit=totalVal-totalCost;
-  const totalRate=totalCost>0?(totalProfit/totalCost)*100:0;
-  document.getElementById('stock-total-val').textContent=fmt(totalVal);
-  const profitEl=document.getElementById('stock-total-profit');
-  profitEl.textContent=fmtSigned(totalProfit);
-  profitEl.className='stock-sum-val '+(totalProfit>0?'red':totalProfit<0?'blue':'');
-  const rateEl=document.getElementById('stock-total-rate');
-  rateEl.textContent=(totalRate>=0?'+':'')+totalRate.toFixed(2)+'%';
-  rateEl.className='stock-sum-val '+(totalRate>0?'red':totalRate<0?'blue':'');
-
-  const tbody=document.getElementById('stock-tbody');
-  if(S.stocks.length===0){
-    tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-sub);">종목을 추가해 주세요</td></tr>`;return;
-  }
-  tbody.innerHTML=S.stocks.map(st=>{
-    const t=st.stockType;
-    const isManual=t==='foreign'||t==='gold';
-    const val=isManual?(parseFloat(st.currentAmount)||0):(parseFloat(st.currentPrice)||0)*(parseFloat(st.quantity)||0);
-    const cost=isManual?(parseFloat(st.buyAmount)||0):(parseFloat(st.buyPrice)||0)*(parseFloat(st.quantity)||0);
-    const profit=val-cost;
-    const rate=cost>0?(profit/cost)*100:0;
-    const cls=rate>0?'profit-pos':rate<0?'profit-neg':'profit-zero';
-    const typeLabel=t==='gold'?'🥇금현물':t==='foreign'?'🌍해외':'🇰🇷국내';
-    return `
-      <tr>
-        <td>
-          <div class="stock-name">${st.name}</div>
-          <div class="stock-ticker">${typeLabel} ${st.ticker}</div>
-          ${st.sector?`<div class="stock-sector">${st.sector}</div>`:''}
-        </td>
-        <td>${isManual?`<input type="number" class="stock-price-input" value="${st.buyAmount||0}" onchange="App.updateStockBuyAmount(${st.id},this.value)" style="width:100px;"/>`:fmt(st.buyPrice)}</td>
-        <td>${isManual?`<input type="number" class="stock-price-input" value="${st.currentAmount||0}" onchange="App.updateStockCurrentAmount(${st.id},this.value)" style="background:#e8f5e9;width:100px;"/>`:`<input type="number" class="stock-price-input" value="${st.currentPrice}" onchange="App.updateStockPrice(${st.id},this.value)"/>`}</td>
-        <td>${isManual?'-':st.quantity}</td>
-        <td style="font-weight:700;">${fmt(val)}</td>
-        <td class="${cls}">${(rate>=0?'+':'')+rate.toFixed(2)}%<br><span style="font-size:11px;">${fmtSigned(profit)}</span></td>
-        <td>
-          <button class="icon-btn" onclick="App.editItem('stock',${st.id})">✏️</button>
-          <button class="icon-btn" onclick="App.deleteItem('stock',${st.id})">🗑️</button>
-        </td>
-      </tr>`;
-  }).join('');
-}
-
-async function tryFetchPrice(yahooUrl,isKorean){
   const proxies=[
     `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`,
     `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`,
@@ -1817,7 +1770,7 @@ async function fetchStockPrices(){
     }catch(e){failed.push(st.name);}
     await new Promise(r=>setTimeout(r,400));
   }
-  saveState();renderStocks();renderAssetStocks();renderDashboard();
+  saveState();renderAssetStocks();renderDashboard();
   btn.classList.remove('loading');btn.textContent='🔄 현재가 새로고침';
   const now=new Date().toLocaleTimeString('ko-KR');
   if(status){
@@ -2427,7 +2380,7 @@ function saveStock(){
   if(id){const st=S.stocks.find(s=>s.id==id);if(st)Object.assign(st,stObj);}
   else S.stocks.push({id:genId(),...stObj});
   syncStockAsset();
-  saveState();closeModal();renderStocks();renderAssetStocks();renderAssets();renderDashboard();
+  saveState();closeModal();renderAssetStocks();renderAssets();renderDashboard();
 }
 
 function editItem(type,id){
@@ -2505,9 +2458,9 @@ function deleteItem(type,id){
 }
 
 function updateAssetAmount(id,val){const a=S.assets.find(a=>a.id==id);if(a)a.amount=numInputParse(val);saveState();renderAssets();renderDashboard();syncFundCalcToAssets();}
-function updateStockPrice(id,val){const st=S.stocks.find(s=>s.id==id);if(st)st.currentPrice=numInputParse(val);syncStockAsset();saveState();renderStocks();renderAssetStocks();renderDashboard();}
+function updateStockPrice(id,val){const st=S.stocks.find(s=>s.id==id);if(st)st.currentPrice=numInputParse(val);syncStockAsset();saveState();renderAssetStocks();renderDashboard();}
 function updateStockBuyAmount(id,val){const st=S.stocks.find(s=>s.id==id);if(st)st.buyAmount=numInputParse(val);syncStockAsset();saveState();renderAssetStocks();renderDashboard();}
-function updateStockCurrentAmount(id,val){const st=S.stocks.find(s=>s.id==id);if(st)st.currentAmount=numInputParse(val);syncStockAsset();saveState();renderStocks();renderAssetStocks();renderDashboard();}
+function updateStockCurrentAmount(id,val){const st=S.stocks.find(s=>s.id==id);if(st)st.currentAmount=numInputParse(val);syncStockAsset();saveState();renderAssetStocks();renderDashboard();}
 
 function deleteCredit(id){
   if(!confirm('삭제하시겠어요?'))return;
@@ -3333,56 +3286,6 @@ function reopenMonth(){
   saveState();renderLedger();
 }
 
-// ===== SUBSCRIPTIONS =====
-let currentSubTab='month';
-function renderSubscriptions(){
-  const now=new Date();
-  const active=S.subscriptions.filter(s=>s.active!==false);
-  const monthTotal=active.reduce((sum,s)=>sum+s.amount,0);
-  const sorted=active.slice().sort((a,b)=>a.billingDay-b.billingDay);
-  const monthEl=document.getElementById('sub-this-month');
-  if(monthEl){
-    if(sorted.length===0){
-      monthEl.innerHTML='<div class="sub-empty">구독 서비스를 추가하면 여기에 납부일이 표시돼요</div>';
-    } else {
-      monthEl.innerHTML=`<div class="sub-total-bar">이번 달 총 구독료: <strong>${fmt(monthTotal)}</strong> · ${sorted.length}개 서비스</div>
-        <div class="sub-timeline-list">
-          ${sorted.map(s=>{
-            const daysLeft=s.billingDay-now.getDate();
-            const isPast=daysLeft<0,isToday=daysLeft===0;
-            return `<div class="sub-timeline-item ${isPast?'past':isToday?'today':'upcoming'}">
-              <div class="sub-day-bubble">${s.billingDay}일</div>
-              <div class="sub-item-info">
-                <div class="sub-item-name">${s.name}</div>
-                <div class="sub-item-cat">${s.category}</div>
-              </div>
-              <div class="sub-item-amount">${fmt(s.amount)}</div>
-              <div class="sub-status-badge ${isPast?'past':isToday?'today':'upcoming'}">${isPast?'납부완료':isToday?'🔔 오늘!':'D-'+daysLeft}</div>
-            </div>`;
-          }).join('')}
-        </div>`;
-    }
-  }
-  const fullEl=document.getElementById('sub-full-list');
-  if(fullEl){
-    if(S.subscriptions.length===0){
-      fullEl.innerHTML=`<div class="card" style="text-align:center;padding:40px;color:var(--text-sub);"><div style="font-size:36px;margin-bottom:8px;">🔄</div><div>구독 서비스를 추가해 보세요</div></div>`;
-    } else {
-      const allTotal=S.subscriptions.filter(s=>s.active!==false).reduce((sum,s)=>sum+s.amount,0);
-      fullEl.innerHTML=`<div class="card" style="padding:14px 20px;margin-bottom:12px;background:var(--green-light);border:1.5px solid var(--green);"><span style="font-weight:700;color:var(--green);">✅ 활성 구독 월 합계: ${fmt(allTotal)}</span></div>`+
-        S.subscriptions.map(sub=>`
-          <div class="sub-card ${sub.active===false?'sub-inactive':''}">
-            <div><div class="sub-card-name">${sub.name}</div><div class="sub-card-meta">${sub.category} · 매월 ${sub.billingDay}일 결제</div></div>
-            <div class="sub-card-right">
-              <div class="sub-card-amount">${fmt(sub.amount)}</div>
-              <label class="sub-toggle-label"><input type="checkbox" ${sub.active!==false?'checked':''} onchange="App.toggleSub(${sub.id},this.checked)"/> ${sub.active!==false?'활성':'중지'}</label>
-              <button class="icon-btn" onclick="App.editSub(${sub.id})">✏️</button>
-              <button class="icon-btn" onclick="App.deleteSub(${sub.id})">🗑️</button>
-            </div>
-          </div>`).join('');
-    }
-  }
-}
 
 function renderAutoList(){
   const el=document.getElementById('ledger-auto-list');if(!el)return;
@@ -3411,49 +3314,6 @@ function renderAutoList(){
       </div>
     </div>`).join('');
 }
-
-function switchSubTab(tab){
-  currentSubTab=tab;
-  document.querySelectorAll('.sub-inner-tab').forEach((el,i)=>{
-    const tabs=['month','all'];el.classList.toggle('active',tabs[i]===tab);
-  });
-  document.querySelectorAll('.sub-tab-pane').forEach(el=>el.classList.remove('active'));
-  const pane=document.getElementById('sub-pane-'+tab);if(pane)pane.classList.add('active');
-}
-
-function openSubModal(){
-  document.getElementById('modal-sub-id').value='';
-  document.getElementById('ms2-name').value='';
-  document.getElementById('ms2-amount').value='';
-  document.getElementById('ms2-day').value='';
-  document.getElementById('ms2-category').value='구독/OTT';
-  openModal('sub');
-}
-
-function editSub(id){
-  const sub=S.subscriptions.find(s=>s.id==id);if(!sub)return;
-  document.getElementById('modal-sub-id').value=id;
-  document.getElementById('ms2-name').value=sub.name;
-  document.getElementById('ms2-amount').value=sub.amount;
-  document.getElementById('ms2-day').value=sub.billingDay;
-  document.getElementById('ms2-category').value=sub.category;
-  openModal('sub');
-}
-
-function saveSub(){
-  const id=document.getElementById('modal-sub-id').value;
-  const name=document.getElementById('ms2-name').value.trim();
-  const amount=numInputParse(document.getElementById('ms2-amount').value);
-  const billingDay=parseInt(document.getElementById('ms2-day').value)||1;
-  const category=document.getElementById('ms2-category').value;
-  if(!name||amount<=0)return alert('서비스명과 금액을 입력해주세요');
-  if(id){const sub=S.subscriptions.find(s=>s.id==id);if(sub){sub.name=name;sub.amount=amount;sub.billingDay=billingDay;sub.category=category;}}
-  else S.subscriptions.push({id:genId(),name,amount,billingDay,category,active:true});
-  saveState();closeModal();renderSubscriptions();
-}
-
-function deleteSub(id){if(!confirm('삭제하시겠어요?'))return;S.subscriptions=S.subscriptions.filter(s=>s.id!=id);saveState();renderSubscriptions();}
-function toggleSub(id,active){const sub=S.subscriptions.find(s=>s.id==id);if(sub)sub.active=active;saveState();renderSubscriptions();}
 
 function openAutoModal(){
   const today=new Date();
@@ -4088,7 +3948,6 @@ window.App={
   fetchStockPrices,
   downloadMonthlyReport,exportToCSV,
   toggleSidebar,closeSidebar,
-  switchSubTab,openSubModal,editSub,saveSub,deleteSub,toggleSub,
   openAutoModal,editAuto,saveAuto,deleteAuto,toggleAuto,
   openAssetModal,promptAddAssetCategory,openStockModal,
   toggleStockAssetDirect,toggleCalFoodSync,
