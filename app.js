@@ -596,8 +596,14 @@ function renderBudget(y,m){
     const pct=effectiveBudget>0?Math.min(100,(spent/effectiveBudget)*100):0;
     const color=pct>=90?'var(--red)':pct>=70?'var(--orange)':'var(--green)';
     const rem=effectiveBudget-spent;
-    // 연동된 가계부 카테고리 태그 (인라인)
-    const linkedTagsHtml=(cat.linkedCategories||[]).map(n=>`<span class="budget-linked-tag">📒${n}</span>`).join('');
+    // 연동된 가계부 카테고리 태그 (인라인, 첫째+N 형식)
+    const linkedArr=cat.linkedCategories||[];
+    const hasLinked=linkedArr.length>0;
+    const linkedTagsHtml=hasLinked
+      ?(linkedArr.length===1
+        ?`<span class="budget-linked-tag">📒${linkedArr[0]}</span>`
+        :`<span class="budget-linked-tag">📒${linkedArr[0]}+${linkedArr.length-1}</span>`)
+      :'';
     // 기본값 설정 모드에서는 checkbox 표시
     const defaultChk=_budgetDefaultMode
       ?`<input type="checkbox" class="budget-default-chk" data-id="${cat.id}" ${cat.synced!==false?'checked':''} style="margin-right:6px;accent-color:var(--green);width:15px;height:15px;flex-shrink:0;"/>`
@@ -612,7 +618,7 @@ function renderBudget(y,m){
           </div>
           <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
             <span class="budget-cat-amounts">${fmt(spent)}<span class="budget-cat-of"> / ${fmt(effectiveBudget)}</span></span>
-            <button class="budget-link-text-btn" onclick="App.openBudgetCatSyncModal(${cat.id})">카테고리 연동</button>
+            <button class="budget-link-text-btn${hasLinked?' linked':''}" onclick="App.openBudgetCatSyncModal(${cat.id})">🔗 카테고리 연동</button>
             <button class="icon-btn" onclick="App.openBudgetModal(${cat.id})">✏️</button>
             <button class="icon-btn" onclick="App.deleteBudgetCategory(${cat.id})">🗑️</button>
           </div>
@@ -871,7 +877,7 @@ function renderFundCalc(){
   // 보유금액 입력창: 연동 시 비활성화
   const amtEl=document.getElementById('fc-amount-input');
   if(amtEl){
-    if(document.activeElement!==amtEl)amtEl.value=fc.amount||'';
+    if(document.activeElement!==amtEl)amtEl.value=fc.amount?(fc.amount).toLocaleString('ko-KR'):'';
     amtEl.readOnly=isLinked;
     amtEl.style.background=isLinked?'var(--green-light)':'';
     amtEl.style.cursor=isLinked?'default':'';
@@ -921,7 +927,7 @@ function renderFundCalc(){
 function _fcSummary(){
   const fc=S.fundCalc||{amount:0,items:[],assetLinked:false};
   const totalUsed=(fc.items||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0);
-  const baseAmt=fc.assetLinked?getTotalAssets():(parseFloat(fc.amount)||0);
+  const baseAmt=parseFloat(fc.amount)||0;
   const remaining=baseAmt-totalUsed;
   const over=remaining<0;
   const tuEl=document.getElementById('fc-total-used');
