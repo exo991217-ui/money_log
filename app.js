@@ -3966,7 +3966,7 @@ function showVarPreview(el){
   const panel=document.createElement('div');
   panel.className='var-inline-panel';
   panel.innerHTML=`
-    <div class="vpp-inner" style="border-color:${theme.border};background:${theme.light};">
+    <div class="vpp-inner" style="border-color:${theme.border};">
       <div class="vpp-list">${listHTML}</div>
     </div>`;
   el.after(panel);
