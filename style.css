@@ -1259,7 +1259,7 @@ body { background: var(--t-bg) !important; }
 .expense-item.var-hoverable{cursor:pointer;transition:background .15s,border-radius .15s;}
 .expense-item.var-hoverable:hover{background:rgba(255,179,71,.07);border-radius:10px;}
 .expense-item.var-active{
-  border:2px solid var(--va-border, rgba(255,179,71,0.5));
+  border:1.5px solid var(--va-border, rgba(255,179,71,0.5));
   border-radius:10px;
   padding:9px 8px;
   background:var(--va-bg, rgba(255,179,71,0.10));
@@ -1272,8 +1272,8 @@ body { background: var(--t-bg) !important; }
 }
 .var-inline-panel.open{max-height:400px;opacity:1;}
 .vpp-inner{
-  background:var(--bg);
-  border:1.5px solid var(--border);
+  background:#F5F5F5;
+  border:1.5px dashed var(--border);
   border-radius:14px;
   padding:10px 12px;
   margin:5px 2px 4px;
