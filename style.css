@@ -1259,16 +1259,9 @@ body { background: var(--t-bg) !important; }
 .expense-item.var-hoverable{cursor:pointer;transition:background .15s,border-radius .15s;}
 .expense-item.var-hoverable:hover{background:rgba(255,179,71,.07);border-radius:10px;}
 .expense-item.var-active{
-  background:var(--text-main);
+  border:2px solid var(--text-main);
   border-radius:10px;
-}
-.expense-item.var-active .item-name,
-.expense-item.var-active .item-cat,
-.expense-item.var-active .item-amount{
-  color:#fff!important;
-}
-.expense-item.var-active .icon-btn{
-  color:#fff;opacity:.7;
+  padding:9px 8px;
 }
 .var-inline-panel{
   overflow:hidden;
