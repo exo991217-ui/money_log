@@ -468,15 +468,11 @@ function getEffectiveVariable(y,m){
     .filter(cat=>!manualCats.has(cat)&&!creditCats.has(cat)&&ledgerSums[cat]>0)
     .map(cat=>({id:'led_'+cat,name:cat,category:cat,amount:ledgerSums[cat],autoFromLedger:true}));
 
-  // 같은 카테고리 autoFromLedger 중복 제거
-  const seenLedgerCats=new Set();
-  const deduped=manual.filter(item=>{
-    if(item.autoFromLedger){
-      if(seenLedgerCats.has(item.category))return false;
-      seenLedgerCats.add(item.category);
-    }
-    return true;
-  });
+  // 카테고리 기준 중복 제거: autoFromLedger(가계부연동) 항목 우선 유지
+  const seenCats=new Set();
+  const deduped=[];
+  manual.forEach(item=>{if(item.autoFromLedger&&!seenCats.has(item.category)){seenCats.add(item.category);deduped.push(item);}});
+  manual.forEach(item=>{if(!item.autoFromLedger&&!seenCats.has(item.category)){seenCats.add(item.category);deduped.push(item);}});
   return[...deduped,...ledgerItems,...creditItems];
 }
 
@@ -596,6 +592,7 @@ function renderBudget(y,m){
     }
     const pct=effectiveBudget>0?Math.min(100,(spent/effectiveBudget)*100):0;
     const color=pct>=90?'var(--red)':pct>=70?'var(--orange)':monthTheme.color;
+    const trackColor=pct>=90?'rgba(239,83,80,0.13)':pct>=70?'rgba(255,152,0,0.13)':monthTheme.light;
     const rem=effectiveBudget-spent;
     // 연동된 가계부 카테고리 태그 (인라인, 첫째+N 형식)
     const linkedArr=cat.linkedCategories||[];
@@ -626,12 +623,12 @@ function renderBudget(y,m){
                <button class="icon-btn" onclick="App.deleteBudgetCategory(${cat.id})">🗑️</button>`}
           </div>
         </div>
-        <div class="budget-cat-bar-wrap">
+        <div class="budget-cat-bar-wrap" style="background:${trackColor};">
           <div class="budget-cat-bar-fill" style="width:${pct}%;background:${color}"></div>
         </div>
         <div class="budget-cat-bottom">
-          <span class="budget-cat-pct">${pct.toFixed(0)}% 사용</span>
-          <span style="font-size:11px;color:${rem>=0?'var(--green)':'var(--red)'};">${rem>=0?'잔여 '+fmt(rem):'초과 '+fmt(-rem)}</span>
+          <span class="budget-cat-pct" style="color:${color};">${pct.toFixed(0)}% 사용</span>
+          <span style="font-size:11px;color:${rem>=0?color:'var(--red)'};">${rem>=0?'잔여 '+fmt(rem):'초과 '+fmt(-rem)}</span>
         </div>
       </div>`;
   }).join('');
@@ -645,15 +642,16 @@ function renderBudget(y,m){
     const rem=totalBudget-totalSpent;
     const pct=totalBudget>0?(totalSpent/totalBudget*100).toFixed(1):0;
     const color=parseFloat(pct)>=90?'var(--red)':parseFloat(pct)>=70?'var(--orange)':monthTheme.color;
+    const trackColor=parseFloat(pct)>=90?'rgba(239,83,80,0.13)':parseFloat(pct)>=70?'rgba(255,152,0,0.13)':monthTheme.light;
     footer.innerHTML=`
       <div class="budget-cat-total-row">
         <span style="font-weight:700;font-size:13px;">전체 합계</span>
-        <span style="font-size:13px;color:${rem>=0?'var(--green)':'var(--red)'};">${fmt(totalSpent)} / ${fmt(totalBudget)}</span>
+        <span style="font-size:13px;color:${rem>=0?color:'var(--red)'};">${fmt(totalSpent)} / ${fmt(totalBudget)}</span>
       </div>
-      <div class="budget-cat-bar-wrap" style="margin:6px 0 4px;">
+      <div class="budget-cat-bar-wrap" style="margin:6px 0 4px;background:${trackColor};">
         <div class="budget-cat-bar-fill" style="width:${pct}%;background:${color}"></div>
       </div>
-      <div class="budget-cat-bottom"><span>${pct}% 사용</span><span style="color:${rem>=0?'var(--green)':'var(--red)'};">${rem>=0?'잔여 '+fmt(rem):'초과 '+fmt(-rem)}</span></div>`;
+      <div class="budget-cat-bottom"><span style="color:${color};">${pct}% 사용</span><span style="color:${rem>=0?color:'var(--red)'};">${rem>=0?'잔여 '+fmt(rem):'초과 '+fmt(-rem)}</span></div>`;
   }
 }
 
