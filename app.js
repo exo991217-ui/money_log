@@ -523,6 +523,25 @@ function renderAll(){
 }
 
 // ===== BUDGET CATEGORIES =====
+// ===== MONTHLY THEME COLORS =====
+function getMonthTheme(m){
+  const themes=[
+    {gradient:'linear-gradient(135deg,#4FC3F7,#0288D1)',color:'#29B6F6'}, // 1월
+    {gradient:'linear-gradient(135deg,#CE93D8,#8E24AA)',color:'#AB47BC'}, // 2월
+    {gradient:'linear-gradient(135deg,#81C784,#388E3C)',color:'#66BB6A'}, // 3월
+    {gradient:'linear-gradient(135deg,#F48FB1,#C2185B)',color:'#EC407A'}, // 4월
+    {gradient:'linear-gradient(135deg,#A5D6A7,#2E7D32)',color:'#4CAF50'}, // 5월
+    {gradient:'linear-gradient(135deg,#FFD54F,#F57F17)',color:'#FFB300'}, // 6월
+    {gradient:'linear-gradient(135deg,#4DD0E1,#00838F)',color:'#00ACC1'}, // 7월
+    {gradient:'linear-gradient(135deg,#FF8A65,#BF360C)',color:'#FF7043'}, // 8월
+    {gradient:'linear-gradient(135deg,#FFCA28,#E65100)',color:'#FFA000'}, // 9월
+    {gradient:'linear-gradient(135deg,#EF9A9A,#B71C1C)',color:'#EF5350'}, // 10월
+    {gradient:'linear-gradient(135deg,#9575CD,#4527A0)',color:'#7E57C2'}, // 11월
+    {gradient:'linear-gradient(135deg,#EF5350,#880E4F)',color:'#E53935'}, // 12월
+  ];
+  return themes[Math.max(0,Math.min(11,(m||1)-1))];
+}
+
 function renderBudget(y,m){
   const el=document.getElementById('budget-cat-list');
   const footer=document.getElementById('budget-cat-footer');
@@ -541,6 +560,8 @@ function renderBudget(y,m){
     if(footer)footer.innerHTML='';
     return;
   }
+
+  const monthTheme=getMonthTheme(m);
 
   // 카테고리별 실제 지출 계산 (linkedCategories가 있으면 가계부 합산)
   function getCatSpent(cat){
@@ -565,7 +586,7 @@ function renderBudget(y,m){
       }
     }
     const pct=effectiveBudget>0?Math.min(100,(spent/effectiveBudget)*100):0;
-    const color=pct>=90?'var(--red)':pct>=70?'var(--orange)':'var(--green)';
+    const color=pct>=90?'var(--red)':pct>=70?'var(--orange)':monthTheme.color;
     const rem=effectiveBudget-spent;
     // 연동된 가계부 카테고리 태그 (인라인, 첫째+N 형식)
     const linkedArr=cat.linkedCategories||[];
@@ -614,7 +635,7 @@ function renderBudget(y,m){
     const totalSpent=cats.reduce((s,c)=>s+getCatSpent(c),0);
     const rem=totalBudget-totalSpent;
     const pct=totalBudget>0?(totalSpent/totalBudget*100).toFixed(1):0;
-    const color=parseFloat(pct)>=90?'var(--red)':parseFloat(pct)>=70?'var(--orange)':'var(--green)';
+    const color=parseFloat(pct)>=90?'var(--red)':parseFloat(pct)>=70?'var(--orange)':monthTheme.color;
     footer.innerHTML=`
       <div class="budget-cat-total-row">
         <span style="font-weight:700;font-size:13px;">전체 합계</span>
@@ -792,7 +813,7 @@ function syncFundCalcToAssets(){
   if(!S.fundCalc||!S.fundCalc.assetLinked)return;
   const ids=S.fundCalc.linkedAssetIds||[];
   if(ids.length===0)return;
-  const total=(S.assets||[]).filter(a=>ids.includes(a.id)).reduce((s,a)=>s+(parseFloat(a.amount)||0),0);
+  const total=(S.assets||[]).filter(a=>ids.includes(String(a.id))).reduce((s,a)=>s+(parseFloat(a.amount)||0),0);
   S.fundCalc.amount=total;
   S.fundCalc.assetLinkedAt=Date.now();
   saveState();
@@ -820,12 +841,8 @@ function renderFundCalc(){
   const badgeEl=document.getElementById('fc-asset-linked-badge');
   if(badgeEl){
     badgeEl.style.display=isLinked?'inline-flex':'none';
-    badgeEl.textContent=isLinked?`🔗 ${linkedIds.length}개 항목 연동중`:'';
+    badgeEl.innerHTML=isLinked?`🔗 ${linkedIds.length}개 항목 연동중 <span class="fc-badge-unlink" onclick="event.stopPropagation();App.toggleAssetTotalLink(false)" title="연동 해제">🔒</span>`:'';
   }
-
-  // 연동 해제 버튼 (연동 중일 때만 표시)
-  const unlinkBtn=document.getElementById('fc-asset-link-btn');
-  if(unlinkBtn)unlinkBtn.style.display=isLinked?'inline-flex':'none';
 
   // 보유금액 입력창: 연동 시 비활성화
   const amtEl=document.getElementById('fc-amount-input');
@@ -967,7 +984,7 @@ function toggleAssetSelector(){
     const linkedIds=(S.fundCalc&&S.fundCalc.linkedAssetIds)||[];
     el.innerHTML=`<div class="fc-asset-selector-title">🏦 자산 선택 (합산할 항목 체크)</div>`+
       assets.map(a=>`<label class="fc-asset-check-row">
-        <input type="checkbox" class="fc-asset-chk" data-id="${a.id}" data-amount="${a.amount}" ${linkedIds.includes(a.id)?'checked':''}/>
+        <input type="checkbox" class="fc-asset-chk" data-id="${a.id}" data-amount="${a.amount}" ${linkedIds.includes(String(a.id))?'checked':''}/>
         <span>${a.name} <span style="color:var(--green);font-weight:700;">${fmt(a.amount)}</span></span>
       </label>`).join('')+
       `<div class="fc-asset-btn-row">
@@ -1036,8 +1053,9 @@ function renderDashboard(){
   const bannerRemaining=entries.length>0?ledBannerIn-ledBannerOut:remaining;
   const bannerIsLedger=entries.length>0;
   const banner=document.getElementById('dash-budget-banner');
+  const monthTheme=getMonthTheme(cm.m);
   banner.style.background=bannerRemaining>=0
-    ?'linear-gradient(135deg,#43C98A,#56D87A)'
+    ?monthTheme.gradient
     :'linear-gradient(135deg,#F06292,#EF5350)';
   document.getElementById('dash-remaining').textContent=fmt(bannerRemaining);
   document.getElementById('dash-banner-sub').textContent=bannerIsLedger
@@ -1777,26 +1795,25 @@ function renderCalendar(){
     const key=y+'-'+m;
     const isNow=(now.getFullYear()===y&&now.getMonth()+1===m);
     const events=((S.consumptionCalendar[y]||{})[m])||[];
-    const isSynced=!!(S.calFoodSync&&S.calFoodSync[key]);
-    const foodBudget=isSynced?getFoodBudgetAmount(y,m):0;
     const eventsTotal=events.reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
-    const monthTotal=eventsTotal+foodBudget;
+    const monthTotal=eventsTotal;
     return `
       <div class="cal-month-card ${isNow?'cal-month-now':''}">
         <div class="cal-month-header">
           <span>${mLabel}${isNow?'<span class="cal-now-tag">NOW</span>':''}</span>
           <div style="display:flex;align-items:center;gap:4px;">
             ${monthTotal>0?`<span class="cal-month-total">${fmt(monthTotal)}</span>`:''}
-            <button class="cal-food-sync-btn ${isSynced?'active':''}" onclick="App.toggleCalFoodSync(${y},${m})" title="${isSynced?'식비 동기화 해제':'식비 예산 동기화'}">🔗</button>
             <button class="cal-month-add" onclick="App.openCalModal(${y},${m})">+</button>
           </div>
         </div>
-        ${isSynced?`<div class="cal-food-sync-row">🍽️ 식비예산 ${fmt(foodBudget)}</div>`:''}
         <div class="cal-event-list">
-          ${events.length===0&&!isSynced?'<div class="cal-empty">일정 없음</div>':events.map(e=>`
+          ${events.length===0?'<div class="cal-empty">일정 없음</div>':events.map(e=>`
             <div class="cal-event-item">
               <span class="cal-event-name">${e.name}${e.amount>0?'<br><span class="cal-event-amount">'+fmt(e.amount)+'</span>':''}</span>
-              <button class="cal-event-delete" onclick="App.deleteCalEvent(${y},${m},${e.id})">✕</button>
+              <div style="display:flex;gap:2px;flex-shrink:0;">
+                <button class="cal-event-edit" onclick="App.editCalEvent(${y},${m},${e.id})">✏️</button>
+                <button class="cal-event-delete" onclick="App.deleteCalEvent(${y},${m},${e.id})">✕</button>
+              </div>
             </div>`).join('')}
         </div>
       </div>`;
@@ -2516,7 +2533,13 @@ function saveCalEvent(){
   if(!name)return alert('내용을 입력해주세요');
   if(!S.consumptionCalendar[y])S.consumptionCalendar[y]={};
   if(!S.consumptionCalendar[y][m])S.consumptionCalendar[y][m]=[];
-  S.consumptionCalendar[y][m].push({id:genId(),name,amount});
+  const editId=document.getElementById('modal-cal-id').value;
+  if(editId){
+    const ev=S.consumptionCalendar[y][m].find(e=>String(e.id)===String(editId));
+    if(ev){ev.name=name;ev.amount=amount;}
+  } else {
+    S.consumptionCalendar[y][m].push({id:genId(),name,amount});
+  }
   saveState();closeModal();renderCalendar();
 }
 
@@ -2524,6 +2547,19 @@ function deleteCalEvent(y,m,id){
   if(S.consumptionCalendar[y]&&S.consumptionCalendar[y][m])
     S.consumptionCalendar[y][m]=S.consumptionCalendar[y][m].filter(e=>e.id!=id);
   saveState();renderCalendar();
+}
+
+function editCalEvent(y,m,id){
+  const ev=((S.consumptionCalendar[y]||{})[m]||[]).find(e=>String(e.id)===String(id));
+  if(!ev)return;
+  document.getElementById('modal-cal-month').value=y+'-'+m;
+  document.getElementById('modal-cal-id').value=id;
+  document.getElementById('modal-cal-month-label').textContent=y+'년 '+m+'월';
+  document.getElementById('mc-event-name').value=ev.name||'';
+  document.getElementById('mc-event-amount').value=ev.amount?(ev.amount).toLocaleString('ko-KR'):'';
+  const hint=document.getElementById('cal-food-hint');
+  if(hint)hint.style.display='none';
+  openModal('cal');
 }
 
 // Savings Goals
@@ -3867,7 +3903,7 @@ window.App={
   deleteCredit,toggleCreditPaid,markAllCreditPaidThisMonth,
   applyLedgerAutomations,toggleLedgerAutoPanel,addAutoInline,
   openEditLedgerModal,saveLedgerEdit,onLedgerEditTypeChange,
-  openCalModal,saveCalEvent,deleteCalEvent,
+  openCalModal,saveCalEvent,deleteCalEvent,editCalEvent,
   openSavingsModal,editSavingsGoal,saveSavingsGoal,deleteSavingsGoal,updateSavedAmount,pickSavingsColor,
   toggleFoodPanel,closeFoodPanel,saveFoodField,toggleFoodDirect,saveFoodDirect,
   toggleCardSettings,addCardSetting,deleteCardSetting,updateCardName,addRate,deleteRate,updateRate,
