@@ -1300,4 +1300,10 @@ body { background: var(--t-bg) !important; }
 }
 .vpp-footer strong{color:var(--orange);font-weight:800;}
 .expense-item.var-hoverable{cursor:pointer;}
-.expense-item.var-hoverable:hover{background:rgba(255,179,71,.04);}
+.expense-item.var-hoverable:hover{background:rgba(255,179,71,.05);}
+.expense-item.var-item-active{
+  border:1.5px solid rgba(255,179,71,.7);
+  border-radius:10px;
+  background:rgba(255,179,71,.06);
+  padding-left:7px;padding-right:7px;
+}
