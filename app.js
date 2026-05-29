@@ -45,7 +45,7 @@ const DEFAULT_DATA=()=>{
   monthBudgets:{},
   assetCategories:['계좌','적금','주식'],
   remainingBudgetSettings:{label:'현재 남은 예산',amount:0},
-  fundCalc:{amount:0,items:[],assetLinked:false,assetLinkedAt:null},
+  fundCalc:{amount:0,items:[],assetLinked:false,assetLinkedAt:null,linkedAssetIds:[]},
   stockAssetDirect:false,
   stockAssetAutoId:null,
   defaultItems:{income:[],fixed:[]},
@@ -99,9 +99,10 @@ function loadState(){
       S.budgetCategories=S.budgetCategories.map(c=>({synced:true,syncFrom:'',linkedCategories:[],...c}));
       if(!S.ledgerCategories)S.ledgerCategories=DEFAULT_DATA().ledgerCategories;
       // Migrate fundCalc: add assetLinked field
-      if(!S.fundCalc)S.fundCalc={amount:0,items:[],assetLinked:false,assetLinkedAt:null};
+      if(!S.fundCalc)S.fundCalc={amount:0,items:[],assetLinked:false,assetLinkedAt:null,linkedAssetIds:[]};
       if(S.fundCalc.assetLinked===undefined)S.fundCalc.assetLinked=false;
       if(S.fundCalc.assetLinkedAt===undefined)S.fundCalc.assetLinkedAt=null;
+      if(!S.fundCalc.linkedAssetIds)S.fundCalc.linkedAssetIds=[];
       if(S.stockAssetDirect===undefined)S.stockAssetDirect=false;
       if(S.stockAssetAutoId===undefined)S.stockAssetAutoId=null;
       if(!S.calFoodSync)S.calFoodSync={};
@@ -278,9 +279,10 @@ window.FB_MERGE = function(fbData) {
     if(!S.currentMonths.ledger)S.currentMonths.ledger={...S.currentMonths.dashboard};
     S.budgetCategories=S.budgetCategories.map(c=>({synced:true,syncFrom:'',linkedCategories:[],...c}));
     // Migrate fundCalc: add assetLinked field
-    if(!S.fundCalc)S.fundCalc={amount:0,items:[],assetLinked:false,assetLinkedAt:null};
+    if(!S.fundCalc)S.fundCalc={amount:0,items:[],assetLinked:false,assetLinkedAt:null,linkedAssetIds:[]};
     if(S.fundCalc.assetLinked===undefined)S.fundCalc.assetLinked=false;
     if(S.fundCalc.assetLinkedAt===undefined)S.fundCalc.assetLinkedAt=null;
+    if(!S.fundCalc.linkedAssetIds)S.fundCalc.linkedAssetIds=[];
   } catch(e) { console.error('[FB_MERGE] 오류:', e); }
 };
 
@@ -519,6 +521,36 @@ function renderAll(){
   renderLedger();renderLcatPanel();
 }
 
+// ===== BUDGET DEFAULT MODE =====
+let _budgetDefaultMode=false;
+
+function openBudgetDefaultMode(){
+  _budgetDefaultMode=true;
+  const banner=document.getElementById('budget-default-banner');
+  if(banner)banner.style.display='flex';
+  const cm=S.currentMonths.income;
+  renderBudget(cm.y,cm.m);
+}
+
+function cancelBudgetDefaultMode(){
+  _budgetDefaultMode=false;
+  const banner=document.getElementById('budget-default-banner');
+  if(banner)banner.style.display='none';
+  const cm=S.currentMonths.income;
+  renderBudget(cm.y,cm.m);
+}
+
+function saveBudgetDefaultMode(){
+  const checks=document.querySelectorAll('.budget-default-chk');
+  checks.forEach(chk=>{
+    const id=parseInt(chk.dataset.id);
+    const cat=(S.budgetCategories||[]).find(c=>c.id===id);
+    if(cat)cat.synced=chk.checked;
+  });
+  saveState();
+  cancelBudgetDefaultMode();
+}
+
 // ===== BUDGET CATEGORIES =====
 function renderBudget(y,m){
   const el=document.getElementById('budget-cat-list');
@@ -564,23 +596,27 @@ function renderBudget(y,m){
     const pct=effectiveBudget>0?Math.min(100,(spent/effectiveBudget)*100):0;
     const color=pct>=90?'var(--red)':pct>=70?'var(--orange)':'var(--green)';
     const rem=effectiveBudget-spent;
-    const syncBadge=cat.synced?'<span class="budget-sync-badge synced">🔗동기화</span>':'<span class="budget-sync-badge unsynced">📅월별</span>';
-    // 연동된 가계부 카테고리 태그
-    const linkedTags=(cat.linkedCategories||[]).length>0
-      ?`<div class="budget-linked-cats">${(cat.linkedCategories||[]).map(n=>`<span class="budget-linked-tag">📒${n}</span>`).join('')}</div>`
+    // 연동된 가계부 카테고리 태그 (인라인)
+    const linkedTagsHtml=(cat.linkedCategories||[]).map(n=>`<span class="budget-linked-tag">📒${n}</span>`).join('');
+    // 기본값 설정 모드에서는 checkbox 표시
+    const defaultChk=_budgetDefaultMode
+      ?`<input type="checkbox" class="budget-default-chk" data-id="${cat.id}" ${cat.synced!==false?'checked':''} style="margin-right:6px;accent-color:var(--green);width:15px;height:15px;flex-shrink:0;"/>`
       :'';
     return `
       <div class="budget-cat-row">
         <div class="budget-cat-top">
-          <span class="budget-cat-name">${cat.name}${foodBadge}${syncBadge}</span>
-          <div style="display:flex;align-items:center;gap:6px;">
+          <div style="display:flex;align-items:center;gap:5px;flex:1;min-width:0;overflow:hidden;">
+            ${defaultChk}
+            <span class="budget-cat-name" style="flex-shrink:0;">${cat.name}${foodBadge}</span>
+            ${linkedTagsHtml}
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
             <span class="budget-cat-amounts">${fmt(spent)}<span class="budget-cat-of"> / ${fmt(effectiveBudget)}</span></span>
-            <button class="icon-btn" title="가계부 카테고리 연동" onclick="App.openBudgetCatSyncModal(${cat.id})">🔗</button>
+            <button class="budget-link-text-btn" onclick="App.openBudgetCatSyncModal(${cat.id})">카테고리 연동</button>
             <button class="icon-btn" onclick="App.openBudgetModal(${cat.id})">✏️</button>
             <button class="icon-btn" onclick="App.deleteBudgetCategory(${cat.id})">🗑️</button>
           </div>
         </div>
-        ${linkedTags}
         <div class="budget-cat-bar-wrap">
           <div class="budget-cat-bar-fill" style="width:${pct}%;background:${color}"></div>
         </div>
@@ -792,10 +828,12 @@ function toggleCalFoodSync(y,m){
   saveState();renderCalendar();
 }
 
-// ===== ASSET TOTAL → FUND CALC SYNC =====
+// ===== ASSET → FUND CALC SYNC (선택 항목만) =====
 function syncFundCalcToAssets(){
   if(!S.fundCalc||!S.fundCalc.assetLinked)return;
-  const total=getTotalAssets();
+  const ids=S.fundCalc.linkedAssetIds||[];
+  if(ids.length===0)return;
+  const total=(S.assets||[]).filter(a=>ids.includes(a.id)).reduce((s,a)=>s+(parseFloat(a.amount)||0),0);
   S.fundCalc.amount=total;
   S.fundCalc.assetLinkedAt=Date.now();
   saveState();
@@ -803,13 +841,11 @@ function syncFundCalcToAssets(){
 }
 
 function toggleAssetTotalLink(linked){
-  if(!S.fundCalc)S.fundCalc={amount:0,items:[],assetLinked:false,assetLinkedAt:null};
+  if(!S.fundCalc)S.fundCalc={amount:0,items:[],assetLinked:false,assetLinkedAt:null,linkedAssetIds:[]};
   S.fundCalc.assetLinked=!!linked;
-  if(linked){
-    S.fundCalc.amount=getTotalAssets();
-    S.fundCalc.assetLinkedAt=Date.now();
-  } else {
+  if(!linked){
     S.fundCalc.assetLinkedAt=null;
+    S.fundCalc.linkedAssetIds=[];
   }
   saveState();renderFundCalc();
 }
@@ -820,25 +856,26 @@ function renderFundCalc(){
   const fc=S.fundCalc||{amount:0,items:[],assetLinked:false};
   const isLinked=!!fc.assetLinked;
 
-  // 총 자산 연동 상태 배지
+  // 연동 배지: 몇 개 항목 연동 중인지 표시
+  const linkedIds=fc.linkedAssetIds||[];
   const badgeEl=document.getElementById('fc-asset-linked-badge');
-  if(badgeEl)badgeEl.style.display=isLinked?'inline-flex':'none';
-
-  // 연동 토글 버튼 상태
-  const linkBtn=document.getElementById('fc-asset-link-btn');
-  if(linkBtn){
-    linkBtn.textContent=isLinked?'🔓 연동 해제':'🔗 총 자산 연동';
-    linkBtn.className='add-btn '+(isLinked?'fc-link-btn-active':'');
+  if(badgeEl){
+    badgeEl.style.display=isLinked?'inline-flex':'none';
+    badgeEl.textContent=isLinked?`🔗 ${linkedIds.length}개 항목 연동중`:'';
   }
+
+  // 연동 해제 버튼 (연동 중일 때만 표시)
+  const unlinkBtn=document.getElementById('fc-asset-link-btn');
+  if(unlinkBtn)unlinkBtn.style.display=isLinked?'inline-flex':'none';
 
   // 보유금액 입력창: 연동 시 비활성화
   const amtEl=document.getElementById('fc-amount-input');
   if(amtEl){
-    if(document.activeElement!==amtEl)amtEl.value=isLinked?getTotalAssets():(fc.amount||'');
+    if(document.activeElement!==amtEl)amtEl.value=fc.amount||'';
     amtEl.readOnly=isLinked;
     amtEl.style.background=isLinked?'var(--green-light)':'';
     amtEl.style.cursor=isLinked?'default':'';
-    amtEl.title=isLinked?'총 자산 연동 중 — 직접 편집 불가':'';
+    amtEl.title=isLinked?'자산 항목 연동 중 — 직접 편집 불가':'';
   }
 
   // 연동 시각 표시
@@ -854,7 +891,7 @@ function renderFundCalc(){
   }
 
   const dispEl=document.getElementById('fc-amount-display');
-  const shownAmt=isLinked?getTotalAssets():(fc.amount||0);
+  const shownAmt=fc.amount||0;
   if(dispEl)dispEl.textContent=shownAmt>0?'보유: '+fmt(shownAmt):'';
   const listEl=document.getElementById('fc-items-list');
   if(listEl){
@@ -958,7 +995,7 @@ function updateFundItem(id,field,value){
 
 function resetFundCalc(){
   if(!confirm('자금 분배 계산기를 초기화하시겠어요?'))return;
-  S.fundCalc={amount:0,items:[],assetLinked:false,assetLinkedAt:null};
+  S.fundCalc={amount:0,items:[],assetLinked:false,assetLinkedAt:null,linkedAssetIds:[]};
   saveState();renderFundCalc();
 }
 
@@ -966,15 +1003,18 @@ function toggleAssetSelector(){
   const el=document.getElementById('fc-asset-selector');if(!el)return;
   const isHidden=el.style.display==='none';
   if(isHidden){
-    // Build asset selector
     const assets=S.assets||[];
     if(assets.length===0){el.innerHTML='<div class="fc-asset-selector-title">자산 없음</div>';el.style.display='block';return;}
+    const linkedIds=(S.fundCalc&&S.fundCalc.linkedAssetIds)||[];
     el.innerHTML=`<div class="fc-asset-selector-title">🏦 자산 선택 (합산할 항목 체크)</div>`+
       assets.map(a=>`<label class="fc-asset-check-row">
-        <input type="checkbox" class="fc-asset-chk" data-id="${a.id}" data-amount="${a.amount}"/>
+        <input type="checkbox" class="fc-asset-chk" data-id="${a.id}" data-amount="${a.amount}" ${linkedIds.includes(a.id)?'checked':''}/>
         <span>${a.name} <span style="color:var(--green);font-weight:700;">${fmt(a.amount)}</span></span>
       </label>`).join('')+
-      `<button class="fc-asset-apply-btn" onclick="App.applyAssetSelection()">✓ 선택 금액 합산 적용</button>`;
+      `<div class="fc-asset-btn-row">
+        <button class="fc-asset-apply-btn" onclick="App.applyAssetSelection()">✓ 합산 적용 (1회)</button>
+        <button class="fc-asset-apply-btn fc-asset-link-apply-btn" onclick="App.applyAssetLink()">🔗 연동으로 적용</button>
+      </div>`;
     el.style.display='block';
   } else {
     el.style.display='none';
@@ -985,8 +1025,29 @@ function applyAssetSelection(){
   const checks=document.querySelectorAll('.fc-asset-chk:checked');
   let total=0;
   checks.forEach(c=>{total+=parseFloat(c.dataset.amount)||0;});
-  if(!S.fundCalc)S.fundCalc={amount:0,items:[]};
+  if(!S.fundCalc)S.fundCalc={amount:0,items:[],assetLinked:false,assetLinkedAt:null,linkedAssetIds:[]};
+  // 연동 해제하고 1회 적용
   S.fundCalc.amount=total;
+  S.fundCalc.assetLinked=false;
+  S.fundCalc.assetLinkedAt=null;
+  S.fundCalc.linkedAssetIds=[];
+  const el=document.getElementById('fc-asset-selector');
+  if(el)el.style.display='none';
+  saveState();renderFundCalc();
+}
+
+function applyAssetLink(){
+  const checks=document.querySelectorAll('.fc-asset-chk:checked');
+  if(checks.length===0){alert('연동할 항목을 선택해 주세요.');return;}
+  if(!S.fundCalc)S.fundCalc={amount:0,items:[],assetLinked:false,assetLinkedAt:null,linkedAssetIds:[]};
+  const ids=Array.from(checks).map(c=>c.dataset.id);
+  S.fundCalc.linkedAssetIds=ids;
+  S.fundCalc.assetLinked=true;
+  // 선택 항목 합산
+  let total=0;
+  checks.forEach(c=>{total+=parseFloat(c.dataset.amount)||0;});
+  S.fundCalc.amount=total;
+  S.fundCalc.assetLinkedAt=Date.now();
   const el=document.getElementById('fc-asset-selector');
   if(el)el.style.display='none';
   saveState();renderFundCalc();
@@ -4016,6 +4077,7 @@ window.App={
   openModal,closeModal,openVariableModal,
   openBudgetModal,saveBudgetCategory,deleteBudgetCategory,
   openBudgetCatSyncModal,saveBudgetCatSync,
+  openBudgetDefaultMode,cancelBudgetDefaultMode,saveBudgetDefaultMode,
   openIncomeModal,openFixedModal,openDefaultMode,cancelDefaultMode,saveDefaultItems,deleteDefaultItems,saveIncome,saveFixed,saveVariable,saveCredit,openCreditModal,editCredit,saveAsset,saveStock,
   editItem,deleteItem,
   updateAssetAmount,updateStockPrice,updateStockBuyAmount,updateStockCurrentAmount,onStockTypeChange,renderAssetStocks,
@@ -4041,7 +4103,7 @@ window.App={
   saveRemainingBudget,editRemainingLabel,
   renderFundCalc,setFundAmount,addFundItem,deleteFundItem,updateFundItem,
   previewFundItem,previewFundAmount,
-  resetFundCalc,toggleAssetSelector,applyAssetSelection,
+  resetFundCalc,toggleAssetSelector,applyAssetSelection,applyAssetLink,
   toggleAssetTotalLink,syncFundCalcToAssets,
   addLcatEntry,deleteLcatEntry,toggleLcatSavings,saveLcatName,toggleLcatPanel,
   openDeleteModal,confirmDeleteMonth,deleteMonthData,
