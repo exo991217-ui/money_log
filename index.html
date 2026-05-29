@@ -257,18 +257,7 @@
             <div class="card-title-group">
               <span>📊 예산 현황</span>
             </div>
-            <div style="display:flex;gap:6px;">
-              <button class="default-set-btn" onclick="App.openBudgetDefaultMode()">⚙ 기본값 설정</button>
-              <button class="add-btn" onclick="App.openBudgetModal()">+ 항목 추가</button>
-            </div>
-          </div>
-          <!-- 기본값 설정 모드 배너 -->
-          <div id="budget-default-banner" style="display:none;align-items:center;justify-content:space-between;gap:8px;background:#F0FFF4;border:1px solid #A9DFBF;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#27AE60;">
-            <span>☑️ 체크된 항목은 이후 달에도 자동 적용됩니다</span>
-            <div style="display:flex;gap:6px;flex-shrink:0;">
-              <button onclick="App.cancelBudgetDefaultMode()" style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--white);font-size:12px;cursor:pointer;">취소</button>
-              <button onclick="App.saveBudgetDefaultMode()" style="padding:4px 10px;border-radius:6px;border:none;background:#27AE60;color:white;font-weight:700;font-size:12px;cursor:pointer;">✓ 저장</button>
-            </div>
+            <button class="add-btn" onclick="App.openBudgetModal()">+ 항목 추가</button>
           </div>
           <div id="budget-cat-list" class="budget-cat-list-wrap"></div>
           <div id="budget-cat-footer" class="budget-cat-footer-wrap"></div>
