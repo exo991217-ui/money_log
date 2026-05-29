@@ -3913,6 +3913,8 @@ let _varActiveEl=null;
 function _clearVarActive(){
   if(_varActiveEl){
     _varActiveEl.classList.remove('var-active');
+    _varActiveEl.style.removeProperty('--va-bg');
+    _varActiveEl.style.removeProperty('--va-border');
     _varActiveEl=null;
   }
   document.querySelectorAll('.var-inline-panel').forEach(p=>p.remove());
@@ -3934,7 +3936,9 @@ function showVarPreview(el){
   _varPreviewCat=category;
   const cm=S.currentMonths.income;
   const theme=getMonthTheme(cm.m);
-  // 활성 항목 스타일
+  // 활성 항목 스타일 (달 테마 컬러 전달)
+  el.style.setProperty('--va-bg', theme.light);
+  el.style.setProperty('--va-border', theme.border);
   el.classList.add('var-active');
   // 가계부 내역 조회
   const key=mkey(cm.y,cm.m);
