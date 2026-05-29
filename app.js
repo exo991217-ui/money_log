@@ -1112,7 +1112,7 @@ function renderDashExpand(section,items){
     ?'<div style="color:var(--text-sub);font-size:12px;padding:8px 0;">항목 없음</div>'
     :items.map(item=>`
       <div class="dash-expand-item">
-        <div class="dash-expand-name">${item.name}${item.cat&&item.cat!==item.name?`<span class="dash-expand-cat">${item.cat}</span>`:''}</div>
+        <div class="dash-expand-name">${item.name}<span class="dash-expand-cat">${item.cat}</span></div>
         <div class="dash-expand-amount ${item.color}">${fmt(item.amount)}</div>
       </div>`).join('');
 }
