@@ -218,7 +218,10 @@
               <button class="add-btn" onclick="App.resetFundCalc()" style="background:#FFF0F0;color:var(--red);">초기화</button>
             </div>
             <div class="fc-amount-section">
-              <div class="fc-amount-label">현재 보유 금액</div>
+              <div class="fc-amount-label">
+                현재 보유 금액
+                <span id="fc-asset-linked-badge" class="fc-asset-link-badge" style="display:none;">🔗 총 자산 연동중</span>
+              </div>
               <div class="fc-amount-row">
                 <input type="text" inputmode="numeric" id="fc-amount-input" class="fc-amount-input" placeholder="0"
                   oninput="App.numInputFmt(this);App.previewFundAmount(this.value)"
@@ -226,6 +229,10 @@
                   onkeydown="if(event.key==='Enter')App.setFundAmount(this.value)"/>
                 <span class="fc-amount-unit">원</span>
                 <button class="add-btn" onclick="App.toggleAssetSelector()" style="white-space:nowrap;flex-shrink:0;">🏦 자산</button>
+              </div>
+              <div id="fc-linked-time" class="fc-linked-time" style="display:none;"></div>
+              <div style="margin-top:6px;">
+                <button id="fc-asset-link-btn" class="add-btn fc-asset-link-toggle" onclick="App.toggleAssetTotalLink(!(S&&S.fundCalc&&S.fundCalc.assetLinked))">🔗 총 자산 연동</button>
               </div>
               <div id="fc-amount-display" class="fc-amount-display"></div>
             </div>
@@ -742,6 +749,18 @@
   <div class="modal-actions">
     <button class="btn-cancel" onclick="App.closeModal()">취소</button>
     <button class="btn-save" onclick="App.saveStock()">저장</button>
+  </div>
+</div>
+
+<!-- Budget Category Sync Modal -->
+<div class="modal" id="modal-bcsync">
+  <div class="modal-header">🔗 가계부 카테고리 연동 — <span id="bcsync-cat-name"></span></div>
+  <input type="hidden" id="bcsync-cat-id"/>
+  <div style="font-size:12px;color:var(--text-sub);margin-bottom:10px;line-height:1.6;">선택한 가계부 카테고리의 지출 합계를 이 예산 항목의 실지출로 자동 반영합니다.<br>여러 카테고리를 동시에 선택할 수 있습니다.</div>
+  <div id="bcsync-body" class="bcsync-body"></div>
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="App.closeModal()">취소</button>
+    <button class="btn-save" onclick="App.saveBudgetCatSync()">저장</button>
   </div>
 </div>
 
