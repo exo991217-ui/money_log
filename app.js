@@ -214,6 +214,7 @@ function loadState(){
 function saveState(){
   try{localStorage.setItem('kakeibo_v4',JSON.stringify(S));}catch(e){alert('저장 공간이 부족합니다. 백업 후 일부 데이터를 정리해 주세요.');}
   if(window.FB_SAVE) window.FB_SAVE(S);
+  updateStorageBar();
 }
 
 // Firebase에서 불러온 데이터를 S에 병합
@@ -743,18 +744,6 @@ function saveRemainingBudget(val){
   saveState();
 }
 
-function editRemainingLabel(){
-  const current=S.remainingBudgetSettings?S.remainingBudgetSettings.label:'현재 남은 예산';
-  const newLabel=prompt('박스 이름을 입력하세요:',current);
-  if(newLabel===null)return;
-  const trimmed=newLabel.trim()||'현재 남은 예산';
-  if(!S.remainingBudgetSettings)S.remainingBudgetSettings={label:trimmed,amount:0};
-  else S.remainingBudgetSettings.label=trimmed;
-  saveState();
-  const el=document.getElementById('remaining-label-display');
-  if(el)el.textContent=trimmed;
-}
-
 
 // ===== STOCK→ASSET AUTO SYNC =====
 function getFoodBudgetAmount(y,m){
@@ -789,14 +778,6 @@ function syncStockAsset(){
     autoAsset.amount=totalBuy;
     S.stockAssetAutoId=autoAsset.id;
   }
-}
-
-function toggleStockAssetDirect(checked){
-  S.stockAssetDirect=!!checked;
-  if(!checked){
-    syncStockAsset();
-  }
-  saveState();renderAssets();
 }
 
 function toggleCalFoodSync(y,m){
@@ -1728,6 +1709,7 @@ function renderAssets(){
 }
 
 // ===== STOCKS =====
+async function tryFetchPrice(yahooUrl,isKorean){
   const proxies=[
     `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`,
     `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`,
@@ -3315,20 +3297,6 @@ function renderAutoList(){
     </div>`).join('');
 }
 
-function openAutoModal(){
-  const today=new Date();
-  document.getElementById('modal-auto-id').value='';
-  document.getElementById('ma2-type').value='expense';
-  document.getElementById('ma2-day').value='';
-  document.getElementById('ma2-start-year').value=today.getFullYear();
-  document.getElementById('ma2-start-month').value=today.getMonth()+1;
-  document.getElementById('ma2-memo').value='';
-  document.getElementById('ma2-amount').value='';
-  document.getElementById('modal-auto-edit-label').textContent='추가';
-  _syncAutoModalCatSelect('');
-  openModal('auto');
-}
-
 function editAuto(id){
   const a=(S.automations||[]).find(a=>a.id==id);if(!a)return;
   const today=new Date();
@@ -3759,58 +3727,21 @@ async function downloadMonthlyReport(){
 }
 
 // ===== BACKUP / EXPORT =====
-function exportToCSV(){
-  const rows=[];
-  const BOM='\uFEFF';
-  rows.push(['=== 나만의 가계부 내보내기 ===']);
-  rows.push(['내보낸 날짜',new Date().toLocaleDateString('ko-KR')]);
-  rows.push([]);
-  rows.push(['[수입/지출 데이터]']);
-  rows.push(['년','월','유형','항목명','카테고리','금액','저축여부']);
-  for(const key of Object.keys(S.monthlyData).sort()){
-    const[y,m]=key.split('-');const d=S.monthlyData[key];
-    (d.income||[]).forEach(i=>rows.push([y,m,'수입',i.name,i.category,i.amount,'']));
-    (d.fixed||[]).forEach(i=>rows.push([y,m,'고정지출',i.name,i.category,i.amount,i.isSavings?'저축':'']));
-    (d.variable||[]).forEach(i=>rows.push([y,m,'변동지출',i.name,i.category,i.amount,'']));
-  }
-  rows.push([]);
-  rows.push(['[가계부]']);
-  rows.push(['년-월','날짜','유형','카테고리','메모','금액']);
-  for(const key of Object.keys(S.ledger).sort()){
-    (S.ledger[key]||[]).forEach(e=>rows.push([key,e.date,e.type==='income'?'수입':'지출',e.category,e.memo||'',e.amount]));
-  }
-  rows.push([]);
-  rows.push(['[식비 캘린더]']);
-  rows.push(['년-월','일','특별일정','메모','금액']);
-  for(const key of Object.keys(S.foodCalendar).sort()){
-    const days=S.foodCalendar[key]||{};
-    Object.entries(days).forEach(([d,dd])=>rows.push([key,d,dd.special||'',dd.memo||'',dd.amount||0]));
-  }
-  rows.push([]);
-  rows.push(['[주식 포트폴리오]']);
-  rows.push(['종목명','티커','섹터','매수단가','현재가','목표가','수량','평가금액','수익률(%)']);
-  S.stocks.forEach(st=>{
-    const val=st.currentPrice*st.quantity;const cost=st.buyPrice*st.quantity;
-    const rate=cost>0?((val-cost)/cost*100).toFixed(2):0;
-    rows.push([st.name,st.ticker,st.sector||'',st.buyPrice,st.currentPrice,st.targetPrice||0,st.quantity,val,rate]);
-  });
-  rows.push([]);
-  rows.push(['[자산]']);
-  rows.push(['자산명','금액']);
-  S.assets.forEach(a=>rows.push([a.name,a.amount]));
-
-  const csv=BOM+rows.map(r=>r.map(c=>{
-    const s=String(c===null||c===undefined?'':c);
-    return s.includes(',')||s.includes('"')||s.includes('\n')?'"'+s.replace(/"/g,'""')+'"':s;
-  }).join(',')).join('\n');
-
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download='가계부_백업_'+new Date().toISOString().slice(0,10)+'.csv';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+function updateStorageBar(){
+  const fill=document.getElementById('storage-fill');
+  const txt=document.getElementById('storage-pct-text');
+  if(!fill||!txt)return;
+  try{
+    const raw=localStorage.getItem('kakeibo_v4')||'';
+    const bytes=new Blob([raw]).size;
+    const maxBytes=5*1024*1024;
+    const pct=Math.min(100,(bytes/maxBytes)*100);
+    const kb=(bytes/1024).toFixed(0);
+    txt.textContent=kb+'KB ('+Math.round(pct)+'%)';
+    fill.style.width=pct+'%';
+    fill.style.background=pct>75?'var(--red)':pct>50?'var(--orange)':'var(--green)';
+  }catch(e){}
 }
-
 
 // ===== MONTHLY DATA DELETE =====
 function openDeleteModal(){
@@ -3946,12 +3877,12 @@ window.App={
   toggleImportPanel,doImportToLedger,
   openCloseMonthModal,closeMonth,reopenMonth,
   fetchStockPrices,
-  downloadMonthlyReport,exportToCSV,
+  downloadMonthlyReport,
   toggleSidebar,closeSidebar,
-  openAutoModal,editAuto,saveAuto,deleteAuto,toggleAuto,
+  editAuto,saveAuto,deleteAuto,toggleAuto,
   openAssetModal,promptAddAssetCategory,openStockModal,
-  toggleStockAssetDirect,toggleCalFoodSync,
-  saveRemainingBudget,editRemainingLabel,
+  toggleCalFoodSync,
+  saveRemainingBudget,
   renderFundCalc,setFundAmount,addFundItem,deleteFundItem,updateFundItem,
   previewFundItem,previewFundAmount,
   resetFundCalc,toggleAssetSelector,applyAssetSelection,applyAssetLink,
@@ -3982,6 +3913,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
   loadState();
+  updateStorageBar();
   // 항상 초기 렌더링 실행 (로컬 데이터 or 기본값 표시)
   // Firebase 모드에서는 FB_MERGE 후 renderAll()이 다시 호출되어 Firebase 데이터로 갱신됨
   try{renderAll();}catch(e){console.error('renderAll error:',e);}
