@@ -3912,9 +3912,7 @@ let _varActiveEl=null;
 
 function _clearVarActive(){
   if(_varActiveEl){
-    _varActiveEl.style.border='';
-    _varActiveEl.style.borderRadius='';
-    _varActiveEl.style.background='';
+    _varActiveEl.classList.remove('var-active');
     _varActiveEl=null;
   }
   document.querySelectorAll('.var-inline-panel').forEach(p=>p.remove());
@@ -3937,9 +3935,7 @@ function showVarPreview(el){
   const cm=S.currentMonths.income;
   const theme=getMonthTheme(cm.m);
   // 활성 항목 스타일
-  el.style.border='1.5px solid '+theme.border;
-  el.style.borderRadius='10px';
-  el.style.background=theme.light;
+  el.classList.add('var-active');
   // 가계부 내역 조회
   const key=mkey(cm.y,cm.m);
   const entries=(S.ledger[key]||[])
@@ -3968,18 +3964,13 @@ function showVarPreview(el){
   panel.innerHTML=`
     <div class="vpp-inner" style="border-color:${theme.border};background:${theme.light};">
       <div class="vpp-list">${listHTML}</div>
-      <div class="vpp-footer">
-        <span class="vpp-link" style="color:${theme.color};" onclick="event.stopPropagation();App.goToLedger()">전체 보기 ›</span>
-      </div>
     </div>`;
   el.after(panel);
   requestAnimationFrame(()=>panel.classList.add('open'));
 }
 
 function goToLedger(){
-  const cat=_varPreviewCat;
   _clearVarActive();
-  if(cat){S.ledgerFilter=cat;}
   document.querySelector('.nav-item[data-tab="ledger"]')?.click();
 }
 
