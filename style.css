@@ -60,16 +60,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
 .add-btn.primary:hover{opacity:.85}
 .add-btn.green-btn{background:var(--green-light);color:var(--green)}
 .add-btn.green-btn:hover{background:var(--green);color:white}
-.backup-btn{padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:white;color:var(--text-sub);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s}
-.backup-btn:hover{background:var(--purple-light);color:#5E4BC4}
 
 /* ===== COLOR HELPERS ===== */
 .green{color:var(--green)!important}.red{color:var(--red)!important}.orange{color:var(--orange)!important}
 .blue{color:var(--blue)!important}.purple{color:var(--purple)!important}.teal{color:var(--teal)!important}
-.bold{font-weight:800}
-
-/* ===== DASHBOARD ===== */
-.budget-banner{background:linear-gradient(135deg,#43C98A,#56D87A);border-radius:var(--radius);padding:20px 28px;color:white;margin-bottom:16px;box-shadow:0 6px 28px rgba(67,201,138,.28);position:relative;overflow:hidden}
 .budget-banner::before{content:'';position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.10)}
 .banner-tag{font-size:13px;font-weight:600;opacity:.85;margin-bottom:4px}
 .banner-amount{font-size:38px;font-weight:900;letter-spacing:-1px}
@@ -118,8 +112,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
 .income-card{border-top:4px solid var(--card-income-strip,var(--green))}
 .fixed-card{border-top:4px solid var(--card-fixed-strip,var(--red))}
 .variable-card{border-top:4px solid var(--card-var-strip,var(--orange))}
-.budget-vis-card{border-top:4px solid var(--card-budget-strip,var(--blue))}
-.expense-col{display:flex;flex-direction:column;gap:16px}
 .item-list{display:flex;flex-direction:column;gap:4px}
 .expense-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed var(--border);font-size:13.5px}
 .expense-item:last-child{border-bottom:none}
@@ -151,44 +143,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
 .budget-cat-total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .budget-empty{color:var(--text-sub);font-size:13px;text-align:center;padding:20px 0;line-height:1.7}
 
-.summary-box{background:white;border-radius:var(--radius-sm);border:1.5px solid var(--border);padding:14px 18px;box-shadow:var(--shadow)}
-.summary-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:13px;color:var(--text-sub)}
 .summary-row.highlight{border-top:1.5px solid var(--border);margin-top:6px;padding-top:10px;font-size:15px;font-weight:700;color:var(--text-main)}
 
 .auto-item{background:var(--blue-light);border-radius:8px;padding:4px 8px}
 .auto-tag{font-size:10px;background:var(--blue);color:white;border-radius:5px;padding:1px 5px;margin-left:4px}
 .auto-tag.ledger{background:#A29BFE}
 .auto-tag.auto{background:var(--orange)}
-.food-inline-direct{padding:4px 0 6px;font-size:12px;}
-
-/* ===== CREDIT CARD ===== */
-.credit-banner{background:linear-gradient(135deg,#5B7FA6,#7B9EC2);border-radius:var(--radius);padding:22px 28px;color:white;margin-bottom:22px;box-shadow:0 4px 20px rgba(91,127,166,.22)}
 .credit-banner-sub{font-size:12px;font-weight:600;opacity:.8;margin-bottom:4px}
 .credit-banner-amount{font-size:36px;font-weight:900;letter-spacing:-1px}
 .credit-note{font-size:11px;opacity:.75;margin-top:4px}
 .credit-list{display:flex;flex-direction:column;gap:16px}
-.credit-card-item{background:white;border-radius:var(--radius);border:1.5px solid var(--border);box-shadow:var(--shadow);overflow:hidden}
-.credit-card-header{background:linear-gradient(135deg,#EEF2FF,#E8F0FF);padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
-.credit-card-name{font-weight:800;font-size:14px;color:#3D5A99}
-.credit-card-meta{font-size:12px;color:var(--text-sub);margin-top:2px}
-.credit-card-remaining{text-align:right}
-.credit-remaining-label{font-size:11px;color:var(--text-sub)}
-.credit-remaining-amount{font-size:18px;font-weight:800;color:#3D5A99}
-.credit-months-list{padding:12px 20px}
-.credit-month-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed var(--border);font-size:13px}
-.credit-month-row:last-child{border-bottom:none}
-.credit-check-label{display:flex;align-items:center;gap:8px;cursor:pointer}
-.credit-check-label input[type="checkbox"]{accent-color:var(--green);width:15px;height:15px}
-.credit-paid{text-decoration:line-through;color:var(--text-sub)}
-.credit-paid-badge{font-size:11px;color:white;background:var(--green);border-radius:5px;padding:1px 6px}
 .credit-delete-btn{background:none;border:none;cursor:pointer;color:var(--red);font-size:14px;opacity:.6;transition:opacity .15s}
 .credit-delete-btn:hover{opacity:1}
-.credit-total-deducted{font-size:12px;color:var(--green);font-weight:600;padding:8px 20px;border-top:1px solid var(--border);background:var(--green-light)}
-.credit-ledger-note{font-size:11px;color:var(--blue);padding:4px 20px 6px;background:var(--blue-light)}
-
-/* ===== CREDIT CARD GROUPED UI ===== */
-.credit-card-group{background:white;border-radius:var(--radius);border:1.5px solid var(--border);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
-.credit-card-group-header{background:linear-gradient(135deg,#EEF2FF,#E8F0FF);padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
 .credit-card-group-name{font-weight:800;font-size:15px;color:#3D5A99}
 .credit-card-group-count{font-size:12px;color:#3D5A99;opacity:.75}
 .credit-section{padding:12px 18px;border-top:1px solid var(--border)}
@@ -235,30 +201,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
 .asset-amount{font-weight:800;font-size:15px;color:var(--blue)}
 
 /* ===== STOCKS ===== */
-.stock-header-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.stock-refresh-btn{padding:7px 14px;border-radius:20px;border:none;background:var(--teal-light);color:var(--teal);font-size:12.5px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
 .stock-refresh-btn:hover{background:var(--teal);color:white}
 .stock-refresh-btn.loading{opacity:.6;pointer-events:none}
-.stock-summary-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:0}
-.stock-sum-item{background:white;border-radius:var(--radius-sm);border:1.5px solid var(--border);padding:16px 20px;box-shadow:var(--shadow)}
 .stock-sum-label{font-size:12px;color:var(--text-sub);font-weight:600}
 .stock-sum-val{font-size:20px;font-weight:800;margin-top:4px;color:var(--text-main)}
-.stock-table{width:100%;border-collapse:collapse;font-size:13.5px}
-.stock-table thead tr{background:linear-gradient(90deg,#F5F2FF,#EEF4FF)}
-.stock-table th{padding:12px 16px;text-align:right;font-size:12px;font-weight:700;color:var(--text-sub)}
-.stock-table th:first-child{text-align:left}
-.stock-table td{padding:14px 16px;border-bottom:1px solid var(--border);text-align:right}
-.stock-table td:first-child{text-align:left}
-.stock-table tbody tr:last-child td{border-bottom:none}
-.stock-table tbody tr:hover td{background:#FAFAFF}
-.stock-name{font-weight:700;font-size:14px}
-.stock-ticker{font-size:11px;color:var(--text-sub)}
-.stock-sector{font-size:10px;color:var(--blue);margin-top:2px}
-.profit-pos{color:var(--red);font-weight:700}
-.profit-neg{color:var(--blue);font-weight:700}
-.profit-zero{color:var(--text-sub);font-weight:700}
-.stock-price-input{width:100px;border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:13px;text-align:right;font-family:var(--font)}
-.stock-price-input.refreshed{border-color:var(--teal);background:var(--teal-light)}
 
 /* Close month analysis */
 .cm-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
@@ -427,10 +373,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
 /* isSavings checkbox row in modal */
 .savings-classify-row{display:flex;align-items:center;gap:8px;padding:10px 0;font-size:13px;font-weight:600;color:var(--text-main)}
 .savings-classify-row input{accent-color:#A29BFE;width:16px;height:16px;cursor:pointer}
-.savings-classify-hint{font-size:11px;color:var(--text-sub);font-weight:400;margin-left:4px}
-
-/* ===== SAVINGS GOALS ===== */
-.savings-section-wrapper{margin-top:28px;background:white;border-radius:var(--radius);border:1.5px solid #D1C4FF;box-shadow:0 4px 20px rgba(162,155,254,.12);overflow:hidden}
 .savings-section-header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px 16px;border-bottom:1.5px solid #EDE8FF;background:linear-gradient(135deg,#F5F0FF,#EEF0FF)}
 .savings-section-title{font-size:16px;font-weight:800;color:#5E4BC4}
 .savings-section-sub{font-size:13px;font-weight:700;color:#A29BFE;margin-left:10px}
@@ -484,14 +426,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
 .card-settings-toggle:hover{background:var(--purple-light);color:#5E4BC4;border-color:#A29BFE}
 
 /* ===== BUDGET SYNC ===== */
-.budget-sync-label{display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text-sub);background:var(--purple-light);border-radius:12px;padding:3px 10px;margin-left:6px;border:1.5px solid var(--border);transition:all .15s}
-.budget-sync-label:hover{border-color:#A29BFE;color:#5E4BC4}
-.budget-sync-label input{accent-color:#A29BFE;cursor:pointer}
-.budget-sync-status{font-size:11px;color:var(--green);font-weight:600;padding:0 0 8px;display:none}
-
-/* ===== LCAT PANEL ===== */
-/* 2-column category/auto bar */
-.lcat-auto-split-bar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 .lcat-auto-split-left,.lcat-auto-split-right{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;background:white;border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:12.5px;font-weight:700;color:var(--text-sub);transition:all .15s;user-select:none}
 .lcat-auto-split-left:hover{background:var(--purple-light);color:#5E4BC4;border-color:#A29BFE}
 .lcat-auto-split-right:hover{background:#FFF8E7;color:#D4A017;border-color:#F0C040}
@@ -507,18 +441,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
 .auto-type-badge.expense{background:#FFEAEA;color:var(--red)}
 .auto-type-badge.income{background:#E7F7EE;color:var(--green)}
 /* Legacy lcat-toggle-bar (kept for any residual use) */
-.lcat-toggle-bar{display:flex;align-items:center;gap:6px;padding:9px 16px;background:white;border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:12.5px;font-weight:700;color:var(--text-sub);margin-bottom:8px;transition:all .15s;user-select:none}
-.lcat-toggle-bar:hover{background:var(--purple-light);color:#5E4BC4;border-color:#A29BFE}
 .lcat-panel-wrap{background:white;border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:14px;box-shadow:var(--shadow)}
 .lcat-list{display:flex;flex-direction:column;gap:6px;margin-bottom:4px}
 .lcat-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--border)}
 .lcat-row:last-child{border-bottom:none}
 .lcat-name-input{border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;font-size:13px;font-family:var(--font);flex:1}
 .lcat-name-input:focus{outline:none;border-color:#A29BFE}
-.lcat-savings-label{display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap}
-.lcat-savings-label input{accent-color:#A29BFE;cursor:pointer}
-.lcat-savings-badge{font-size:11px;font-weight:700;border-radius:6px;padding:2px 7px;background:var(--border);color:var(--text-sub);transition:all .15s}
-.lcat-savings-badge.on{background:#A29BFE;color:white}
 .lcat-empty{font-size:13px;color:var(--text-sub);padding:8px 0;line-height:1.6}
 
 /* ===== MOBILE RESPONSIVE ===== */
@@ -538,20 +466,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
   .income-expense-grid{grid-template-columns:1fr}
   .installment-grid{grid-template-columns:1fr}
   .dash-ledger-grid{grid-template-columns:1fr 1fr}
-  .stock-summary-bar{grid-template-columns:1fr}
-  .cal-year-grid{grid-template-columns:repeat(2,1fr)}
   .food-panel-fields{grid-template-columns:1fr}
   .page-header{flex-direction:column;gap:10px}
   .ledger-quick-form{flex-direction:column}
   .lq-input,.lq-date,.lq-memo,.lq-amount{width:100%}
-  .stock-table{font-size:12px}
-  .stock-table th,.stock-table td{padding:8px}
   .modal{min-width:calc(100vw - 32px);left:50%;transform:translate(-50%,-50%)}
   .banner-amount{font-size:28px}
   .dash-sr-card{flex-direction:column;align-items:flex-start}
   .dash-sr-right{align-items:flex-start}
 }
-
 
 /* ===== REMAINING BUDGET CARD ===== */
 .income-left-col {
@@ -565,59 +488,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
   min-height: 180px;
 }
 
-.remaining-budget-card {
-  background: linear-gradient(135deg, #5E4BC4 0%, #A29BFE 100%);
-  color: white;
-  border-radius: 16px;
-  padding: 18px 20px;
-  box-shadow: 0 4px 16px rgba(94, 75, 196, 0.25);
-}
-
-.remaining-budget-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.remaining-budget-label {
-  font-size: 13px;
-  font-weight: 700;
-  opacity: 0.9;
-  letter-spacing: -0.3px;
-}
-
-.remaining-budget-card .icon-btn {
-  background: rgba(255,255,255,0.2);
-  color: white;
-  border-radius: 8px;
-  padding: 3px 7px;
-  font-size: 13px;
-}
-
-.remaining-budget-card .icon-btn:hover {
-  background: rgba(255,255,255,0.35);
-}
-
-.remaining-budget-body {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.remaining-budget-amount-input {
-  background: rgba(255,255,255,0.2);
-  border: 1.5px solid rgba(255,255,255,0.4);
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-size: 22px;
-  font-weight: 800;
-  color: white;
-  width: 100%;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
 .remaining-budget-amount-input::placeholder {
   color: rgba(255,255,255,0.5);
 }
@@ -625,19 +495,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
 .remaining-budget-amount-input:focus {
   border-color: rgba(255,255,255,0.8);
   background: rgba(255,255,255,0.25);
-}
-
-.remaining-budget-unit {
-  font-size: 16px;
-  font-weight: 700;
-  opacity: 0.85;
-  white-space: nowrap;
-}
-
-.remaining-budget-hint {
-  font-size: 11px;
-  opacity: 0.7;
-  margin-top: 8px;
 }
 
 /* ===== ASSET CATEGORY ===== */
@@ -665,9 +522,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
   border-radius: 8px;
 }
 
-
-
-
 /* ===== MONTHLY THEME VARIABLES ===== */
 :root {
   --t1: #5E4BC4;
@@ -682,7 +536,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
 .nav-item.active { background: linear-gradient(135deg, color-mix(in srgb, var(--t1) 15%, transparent), color-mix(in srgb, var(--t2) 15%, transparent)) !important; color: var(--t1) !important; }
 .add-btn.primary { background: linear-gradient(135deg, var(--t1), var(--t2)) !important; }
 .report-btn { background: linear-gradient(135deg, var(--t1), var(--t2)) !important; }
-.remaining-budget-card { background: linear-gradient(135deg, var(--t1) 0%, var(--t2) 100%) !important; }
 .budget-cat-bar-fill { background: var(--t1) !important; }
 .savings-add-main-btn { background: linear-gradient(135deg, var(--t1), var(--t2)) !important; }
 body { background: var(--t-bg) !important; }
@@ -803,46 +656,12 @@ body { background: var(--t-bg) !important; }
 .asset-stock-sum-label{font-size:11px;color:var(--text-sub);font-weight:600;margin-bottom:3px;}
 .asset-stock-sum-val{font-size:14px;font-weight:800;}
 .asset-stock-list{display:flex;flex-direction:column;}
-.asset-stock-item{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px dashed var(--border);font-size:13px;}
-.asset-stock-item:last-child{border-bottom:none;}
-.asset-stock-name{flex:1;min-width:0;}
-.asset-stock-name-text{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.asset-stock-ticker{font-size:11px;color:var(--text-sub);}
-.asset-stock-price-input{width:85px;border:1.5px solid var(--border);border-radius:8px;padding:4px 6px;font-size:12px;text-align:right;font-family:var(--font);transition:border-color .2s;}
-.asset-stock-price-input:focus{outline:none;border-color:#00CEC9;}
-.asset-stock-val{min-width:75px;text-align:right;font-weight:700;font-size:13px;}
-.asset-stock-rate{min-width:65px;text-align:right;font-weight:700;font-size:12px;}
-.asset-stock-actions{display:flex;gap:3px;flex-shrink:0;}
 
 @media(max-width:680px){
   .asset-stock-summary{grid-template-columns:1fr 1fr;}
   .asset-stock-summary .asset-stock-sum-item:last-child{grid-column:1/-1;}
   .fc-amount-row{flex-wrap:wrap;}
   .fc-item-amount{width:80px;}
-  .asset-stock-val,.asset-stock-rate{min-width:55px;font-size:11px;}
-  .asset-stock-price-input{width:70px;}
-}
-
-/* ===== 주식 직접 설정 토글 ===== */
-.stock-direct-toggle{
-  display:flex;align-items:center;gap:5px;
-  font-size:12px;color:var(--text-sub);cursor:pointer;
-  padding:4px 8px;border:1px solid var(--border);border-radius:8px;
-  background:var(--white);white-space:nowrap;
-}
-.stock-direct-toggle input[type=checkbox]{
-  accent-color:var(--t2);width:14px;height:14px;cursor:pointer;
-}
-
-/* ===== 소비 캘린더 식비 동기화 버튼 ===== */
-.cal-food-sync-btn{
-  background:none;border:1px solid var(--border);border-radius:6px;
-  font-size:12px;padding:2px 5px;cursor:pointer;color:var(--text-sub);
-  line-height:1;transition:all .15s;
-}
-.cal-food-sync-btn:hover{background:var(--t-bg);border-color:var(--t2);}
-.cal-food-sync-btn.active{
-  background:var(--green-light);border-color:var(--green);color:var(--green);
 }
 .cal-food-sync-row{
   font-size:11px;color:var(--green);background:var(--green-light);
@@ -927,6 +746,32 @@ body { background: var(--t-bg) !important; }
   padding:8px 12px;text-align:left;transition:all .15s;
 }
 .sidebar-delete-btn:hover{background:#FFE0E0;border-color:#FF9999;}
+/* ===== 사이드바 저장 용량 바 ===== */
+.sidebar-storage{
+  margin:0 16px 10px;
+  padding:8px 10px;
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:10px;
+}
+.sidebar-storage-info{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:5px;
+}
+.sidebar-storage-label{
+  font-size:10.5px;font-weight:600;color:var(--text-sub);
+}
+.sidebar-storage-pct{
+  font-size:10.5px;font-weight:700;color:var(--text-main);
+}
+.sidebar-storage-track{
+  height:4px;background:var(--border);border-radius:99px;overflow:hidden;
+}
+.sidebar-storage-fill{
+  height:100%;border-radius:99px;background:var(--green);
+  transition:width .4s ease,background .4s ease;width:0%;
+}
+
 
 /* ===== 데이터 삭제 모달 내부 ===== */
 .delete-month-list{
