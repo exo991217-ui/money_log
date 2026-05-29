@@ -461,32 +461,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
 .savings-target-label{font-size:12px;color:var(--text-sub)}
 .savings-remaining-label{font-size:11px;color:var(--text-sub);background:var(--bg);border-radius:5px;padding:2px 6px}
 .savings-empty-state{text-align:center;padding:32px 20px;color:var(--text-sub)}
-
-/* Subscriptions */
-.sub-inner-tab{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:white;color:var(--text-sub);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
-.sub-inner-tab.active{background:var(--purple-light);color:#5E4BC4;border-color:#A29BFE}
-.sub-tab-pane{display:none}.sub-tab-pane.active{display:block}
-.sub-total-bar{background:var(--purple-light);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:12px;font-size:13px;font-weight:600;color:#5E4BC4}
-.sub-timeline-list{display:flex;flex-direction:column;gap:8px}
-.sub-timeline-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:white;font-size:13px}
-.sub-timeline-item.past{opacity:.55}
-.sub-timeline-item.today{border-color:var(--orange);background:var(--orange-light)}
-.sub-day-bubble{width:38px;height:38px;border-radius:50%;background:var(--purple-light);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#5E4BC4;flex-shrink:0}
-.sub-item-info{flex:1}
-.sub-item-name{font-weight:700}
-.sub-item-cat{font-size:11px;color:var(--text-sub)}
-.sub-item-amount{font-weight:800;color:var(--text-main)}
-.sub-status-badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;background:var(--bg);color:var(--text-sub)}
-.sub-status-badge.today{background:var(--orange);color:white}
-.sub-status-badge.past{background:var(--green-light);color:var(--green)}
-.sub-card{background:white;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
-.sub-card-name{font-weight:700;font-size:14px}
-.sub-card-meta{font-size:11px;color:var(--text-sub);margin-top:2px}
-.sub-card-right{display:flex;align-items:center;gap:10px}
-.sub-card-amount{font-weight:800;font-size:15px;color:var(--purple)}
-.sub-toggle-label{font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px}
-.sub-inactive{opacity:.5}
-.sub-empty{text-align:center;padding:32px 20px;color:var(--text-sub);font-size:13px;line-height:1.7}
 .auto-card{background:white;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
 .auto-card-left{flex:1}
 .auto-card-name{font-weight:700;font-size:14px}
