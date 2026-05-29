@@ -533,9 +533,7 @@
             <option value="expense">지출</option>
             <option value="income">수입</option>
           </select>
-          <input type="number" id="la-day" class="lq-input" style="flex:0 0 50px;" placeholder="매월 일" min="1" max="31"/>
-          <input type="number" id="la-start-year" class="lq-input" style="flex:0 0 62px;" placeholder="시작년"/>
-          <input type="number" id="la-start-month" class="lq-input" style="flex:0 0 46px;" placeholder="월" min="1" max="12"/>
+          <input type="date" id="la-start-date" class="lq-input" style="flex:0 0 140px;"/>
           <select id="la-cat-sel" class="lq-input" style="flex:1;"></select>
           <input type="text" id="la-memo" class="lq-input" style="flex:2;" placeholder="메모 #태그"/>
           <input type="text" inputmode="numeric" id="la-amount" class="lq-input" style="flex:1;" placeholder="금액" oninput="App.numInputFmt(this)"/>
