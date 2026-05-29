@@ -1259,9 +1259,10 @@ body { background: var(--t-bg) !important; }
 .expense-item.var-hoverable{cursor:pointer;transition:background .15s,border-radius .15s;}
 .expense-item.var-hoverable:hover{background:rgba(255,179,71,.07);border-radius:10px;}
 .expense-item.var-active{
-  border:2px solid var(--text-main);
+  border:2px solid var(--va-border, rgba(255,179,71,0.5));
   border-radius:10px;
   padding:9px 8px;
+  background:var(--va-bg, rgba(255,179,71,0.10));
 }
 .var-inline-panel{
   overflow:hidden;
