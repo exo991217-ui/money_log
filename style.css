@@ -1148,18 +1148,27 @@ body { background: var(--t-bg) !important; }
   .food-cal-dow{font-size:12px;padding:8px 0;}
 }
 
-/* ===== 예산 카테고리 연동 태그 ===== */
-.budget-linked-cats{
-  display:flex;flex-wrap:wrap;gap:4px;
-  margin:4px 0 6px;
-}
+/* ===== 예산 카테고리 연동 태그 (인라인) ===== */
 .budget-linked-tag{
-  font-size:11px;font-weight:600;
-  padding:2px 8px;border-radius:10px;
+  display:inline-block;
+  font-size:10px;font-weight:600;
+  padding:1px 6px;border-radius:8px;
   background:#EDF7FF;color:#2980B9;
   border:1px solid #B3D7F5;
   white-space:nowrap;
+  flex-shrink:0;
 }
+
+/* ===== 카테고리 연동 텍스트 버튼 ===== */
+.budget-link-text-btn{
+  font-size:10px;font-weight:600;
+  padding:2px 7px;border-radius:6px;
+  background:#EDF7FF;color:#2980B9;
+  border:1px solid #B3D7F5;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+  transition:background .12s;
+}
+.budget-link-text-btn:hover{background:#D0EEFF;}
 
 /* ===== 예산 카테고리 연동 모달 ===== */
 .bcsync-body{
@@ -1195,15 +1204,20 @@ body { background: var(--t-bg) !important; }
   font-size:11px;color:var(--text-sub);
   margin-top:2px;padding-left:2px;
 }
-.fc-asset-link-toggle{
-  font-size:12px;padding:5px 12px;
-  white-space:nowrap;
-  background:var(--green-light);color:var(--green);
-  border:1.5px solid #C8EDD9;
-  transition:background .15s,color .15s;
-}
-.fc-asset-link-toggle:hover{background:#C8EDD9;}
 .fc-link-btn-active{
   background:#EAFAF1 !important;color:#27AE60 !important;
-  border-color:#A9DFBF !important;font-weight:700;
+  border-color:#A9DFBF !important;font-weight:700;font-size:12px;
+  padding:5px 12px;white-space:nowrap;
+}
+.fc-asset-btn-row{
+  display:flex;gap:6px;margin-top:8px;
+}
+.fc-asset-apply-btn{
+  flex:1;padding:8px 0;border-radius:8px;border:none;
+  background:var(--green);color:white;font-weight:700;font-size:13px;
+  cursor:pointer;transition:filter .15s;
+}
+.fc-asset-apply-btn:hover{filter:brightness(.9);}
+.fc-asset-link-apply-btn{
+  background:#3498DB !important;
 }
