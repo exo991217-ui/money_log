@@ -13,7 +13,9 @@ const DEFAULT_MONTH=()=>({
   variable:[],
 });
 
-const DEFAULT_DATA=()=>({
+const DEFAULT_DATA=()=>{
+  const _n=new Date();const _y=_n.getFullYear();const _m=_n.getMonth()+1;
+  return ({
   monthlyData:{},creditCards:[],assets:[],
   stocks:[
     {id:1,name:'삼성전자우',ticker:'005935',sector:'반도체',buyPrice:109472,currentPrice:109472,targetPrice:0,quantity:1,stockType:'domestic'},
@@ -32,18 +34,18 @@ const DEFAULT_DATA=()=>({
       {id:5,minMonths:13,maxMonths:24,rate:15.9},
     ]
   }],
-  currentMonths:{dashboard:{y:2026,m:5},income:{y:2026,m:5},credit:{y:2026,m:5},food:{y:2026,m:5},ledger:{y:2026,m:5}},
-  calYear:2026,ledger:{},subscriptions:[],automations:[],closedMonths:{},ledgerFilter:null,ledgerTagFilter:null,
+  currentMonths:{dashboard:{y:_y,m:_m},income:{y:_y,m:_m},credit:{y:_y,m:_m},food:{y:_y,m:_m},ledger:{y:_y,m:_m}},
+  calYear:_y,ledger:{},subscriptions:[],automations:[],closedMonths:{},ledgerFilter:null,ledgerTagFilter:null,
   budgetCategories:[
-    {id:101,name:'식비',budget:200000,synced:true,syncFrom:''},
-    {id:102,name:'생필품',budget:200000,synced:true,syncFrom:''},
-    {id:103,name:'문화/여가',budget:200000,synced:true,syncFrom:''},
-    {id:104,name:'기타',budget:200000,synced:true,syncFrom:''},
+    {id:101,name:'식비',budget:200000,synced:true,syncFrom:'',linkedCategories:[]},
+    {id:102,name:'생필품',budget:200000,synced:true,syncFrom:'',linkedCategories:[]},
+    {id:103,name:'문화/여가',budget:200000,synced:true,syncFrom:'',linkedCategories:[]},
+    {id:104,name:'기타',budget:200000,synced:true,syncFrom:'',linkedCategories:[]},
   ],
   monthBudgets:{},
   assetCategories:['계좌','적금','주식'],
   remainingBudgetSettings:{label:'현재 남은 예산',amount:0},
-  fundCalc:{amount:0,items:[]},
+  fundCalc:{amount:0,items:[],assetLinked:false,assetLinkedAt:null},
   stockAssetDirect:false,
   stockAssetAutoId:null,
   defaultItems:{income:[],fixed:[]},
@@ -61,7 +63,7 @@ const DEFAULT_DATA=()=>({
     {id:10,name:'🎁 경조사',isSavings:false},
     {id:11,name:'📦 기타',isSavings:false},
   ],
-});
+});};
 
 let S=null;
 
@@ -74,7 +76,7 @@ function loadState(){
       if(!S.monthlyData)S.monthlyData={};
       if(!S.cardSettings)S.cardSettings=D.cardSettings;
       if(!S.currentMonths)S.currentMonths=D.currentMonths;
-      if(!S.calYear)S.calYear=2026;
+      if(!S.calYear)S.calYear=new Date().getFullYear();
       if(!S.savingsGoals)S.savingsGoals={};
       if(!S.foodDirectSet)S.foodDirectSet={};
       if(!S.foodCalendar)S.foodCalendar={};
@@ -93,19 +95,23 @@ function loadState(){
       if(!S.monthBudgets)S.monthBudgets={};
       if(!S.assetCategories)S.assetCategories=['계좌','적금','주식'];
       if(!S.remainingBudgetSettings)S.remainingBudgetSettings={label:'현재 남은 예산',amount:0};
-      // Migrate per-category sync: add synced/syncFrom to old categories
-      S.budgetCategories=S.budgetCategories.map(c=>({synced:true,syncFrom:'',...c}));
+      // Migrate per-category sync: add synced/syncFrom/linkedCategories to old categories
+      S.budgetCategories=S.budgetCategories.map(c=>({synced:true,syncFrom:'',linkedCategories:[],...c}));
       if(!S.ledgerCategories)S.ledgerCategories=DEFAULT_DATA().ledgerCategories;
+      // Migrate fundCalc: add assetLinked field
+      if(!S.fundCalc)S.fundCalc={amount:0,items:[],assetLinked:false,assetLinkedAt:null};
+      if(S.fundCalc.assetLinked===undefined)S.fundCalc.assetLinked=false;
+      if(S.fundCalc.assetLinkedAt===undefined)S.fundCalc.assetLinkedAt=null;
       if(S.stockAssetDirect===undefined)S.stockAssetDirect=false;
       if(S.stockAssetAutoId===undefined)S.stockAssetAutoId=null;
       if(!S.calFoodSync)S.calFoodSync={};
       // 예산 카테고리 강제 리셋 (식비/생필품/문화여가/기타 각 20만)
       if(!S._budget_reset_v2){
         S.budgetCategories=[
-          {id:201,name:'식비',budget:200000,synced:true,syncFrom:''},
-          {id:202,name:'생필품',budget:200000,synced:true,syncFrom:''},
-          {id:203,name:'문화/여가',budget:200000,synced:true,syncFrom:''},
-          {id:204,name:'기타',budget:200000,synced:true,syncFrom:''},
+          {id:201,name:'식비',budget:200000,synced:true,syncFrom:'',linkedCategories:[]},
+          {id:202,name:'생필품',budget:200000,synced:true,syncFrom:'',linkedCategories:[]},
+          {id:203,name:'문화/여가',budget:200000,synced:true,syncFrom:'',linkedCategories:[]},
+          {id:204,name:'기타',budget:200000,synced:true,syncFrom:'',linkedCategories:[]},
         ];
         S.monthBudgets={};
         S._budget_reset_v2=true;
@@ -260,17 +266,21 @@ window.FB_MERGE = function(fbData) {
     // 예산 카테고리 강제 리셋
     if(!S._budget_reset_v2){
       S.budgetCategories=[
-        {id:201,name:'식비',budget:200000,synced:true,syncFrom:''},
-        {id:202,name:'생필품',budget:200000,synced:true,syncFrom:''},
-        {id:203,name:'문화/여가',budget:200000,synced:true,syncFrom:''},
-        {id:204,name:'기타',budget:200000,synced:true,syncFrom:''},
+        {id:201,name:'식비',budget:200000,synced:true,syncFrom:'',linkedCategories:[]},
+        {id:202,name:'생필품',budget:200000,synced:true,syncFrom:'',linkedCategories:[]},
+        {id:203,name:'문화/여가',budget:200000,synced:true,syncFrom:'',linkedCategories:[]},
+        {id:204,name:'기타',budget:200000,synced:true,syncFrom:'',linkedCategories:[]},
       ];
       S.monthBudgets={};
       S._budget_reset_v2=true;
     }
     if(S.ledgerFilter===undefined)S.ledgerFilter=null;
     if(!S.currentMonths.ledger)S.currentMonths.ledger={...S.currentMonths.dashboard};
-    S.budgetCategories=S.budgetCategories.map(c=>({synced:true,syncFrom:'',...c}));
+    S.budgetCategories=S.budgetCategories.map(c=>({synced:true,syncFrom:'',linkedCategories:[],...c}));
+    // Migrate fundCalc: add assetLinked field
+    if(!S.fundCalc)S.fundCalc={amount:0,items:[],assetLinked:false,assetLinkedAt:null};
+    if(S.fundCalc.assetLinked===undefined)S.fundCalc.assetLinked=false;
+    if(S.fundCalc.assetLinkedAt===undefined)S.fundCalc.assetLinkedAt=null;
   } catch(e) { console.error('[FB_MERGE] 오류:', e); }
 };
 
@@ -518,10 +528,10 @@ function renderBudget(y,m){
   const cats=getActiveBudgetCats(y,m);
   const effectiveVars=getEffectiveVariable(y,m);
   const foodTotal=getFoodTotal(y,m);
-  // Build catSpent: 식비 uses food calendar, others use effective variable
+  const ledgerSums=getLedgerCategorySums(y,m);
+  // Build catSpent: from effective variable (unless linkedCategories is set)
   const catSpent={};
   effectiveVars.forEach(v=>{catSpent[v.category]=(catSpent[v.category]||0)+(parseFloat(v.amount)||0);});
-  // food calendar total now goes to 식비 BUDGET, not spent - handled per-category below
 
   if(cats.length===0){
     el.innerHTML=`<div class="budget-empty">+ 항목 추가로 카테고리별 예산을 설정하세요</div>`;
@@ -529,8 +539,17 @@ function renderBudget(y,m){
     return;
   }
 
+  // 카테고리별 실제 지출 계산 (linkedCategories가 있으면 가계부 합산)
+  function getCatSpent(cat){
+    const linked=(cat.linkedCategories||[]);
+    if(linked.length>0){
+      return linked.reduce((s,lname)=>s+(ledgerSums[lname]||0),0);
+    }
+    return catSpent[cat.name]||0;
+  }
+
   el.innerHTML=cats.map(cat=>{
-    const spent=catSpent[cat.name]||0;
+    const spent=getCatSpent(cat);
     // For 식비: use food calendar total as budget if not manually set
     let effectiveBudget=cat.budget;
     let foodBadge='';
@@ -546,16 +565,22 @@ function renderBudget(y,m){
     const color=pct>=90?'var(--red)':pct>=70?'var(--orange)':'var(--green)';
     const rem=effectiveBudget-spent;
     const syncBadge=cat.synced?'<span class="budget-sync-badge synced">🔗동기화</span>':'<span class="budget-sync-badge unsynced">📅월별</span>';
+    // 연동된 가계부 카테고리 태그
+    const linkedTags=(cat.linkedCategories||[]).length>0
+      ?`<div class="budget-linked-cats">${(cat.linkedCategories||[]).map(n=>`<span class="budget-linked-tag">📒${n}</span>`).join('')}</div>`
+      :'';
     return `
       <div class="budget-cat-row">
         <div class="budget-cat-top">
           <span class="budget-cat-name">${cat.name}${foodBadge}${syncBadge}</span>
           <div style="display:flex;align-items:center;gap:6px;">
             <span class="budget-cat-amounts">${fmt(spent)}<span class="budget-cat-of"> / ${fmt(effectiveBudget)}</span></span>
+            <button class="icon-btn" title="가계부 카테고리 연동" onclick="App.openBudgetCatSyncModal(${cat.id})">🔗</button>
             <button class="icon-btn" onclick="App.openBudgetModal(${cat.id})">✏️</button>
             <button class="icon-btn" onclick="App.deleteBudgetCategory(${cat.id})">🗑️</button>
           </div>
         </div>
+        ${linkedTags}
         <div class="budget-cat-bar-wrap">
           <div class="budget-cat-bar-fill" style="width:${pct}%;background:${color}"></div>
         </div>
@@ -571,7 +596,7 @@ function renderBudget(y,m){
       if(c.name==='식비'&&!c.foodBudgetManual&&foodTotal>0)return s+foodTotal;
       return s+c.budget;
     },0);
-    const totalSpent=cats.reduce((s,c)=>s+(catSpent[c.name]||0),0);
+    const totalSpent=cats.reduce((s,c)=>s+getCatSpent(c),0);
     const rem=totalBudget-totalSpent;
     const pct=totalBudget>0?(totalSpent/totalBudget*100).toFixed(1):0;
     const color=parseFloat(pct)>=90?'var(--red)':parseFloat(pct)>=70?'var(--orange)':'var(--green)';
@@ -585,6 +610,39 @@ function renderBudget(y,m){
       </div>
       <div class="budget-cat-bottom"><span>${pct}% 사용</span><span style="color:${rem>=0?'var(--green)':'var(--red)'};">${rem>=0?'잔여 '+fmt(rem):'초과 '+fmt(-rem)}</span></div>`;
   }
+}
+
+// ===== BUDGET CATEGORY SYNC MODAL =====
+function openBudgetCatSyncModal(catId){
+  const cat=(S.budgetCategories||[]).find(c=>c.id==catId);
+  if(!cat)return;
+  const linked=cat.linkedCategories||[];
+  const lcats=S.ledgerCategories||[];
+  const el=document.getElementById('modal-bcsync');
+  const bodyEl=document.getElementById('bcsync-body');
+  if(!el||!bodyEl)return;
+  document.getElementById('bcsync-cat-name').textContent=cat.name;
+  document.getElementById('bcsync-cat-id').value=catId;
+  if(lcats.length===0){
+    bodyEl.innerHTML='<div style="color:var(--text-sub);font-size:13px;padding:12px 0;">등록된 가계부 카테고리가 없습니다.<br>가계부 탭에서 카테고리를 먼저 추가해 주세요.</div>';
+  } else {
+    bodyEl.innerHTML=lcats.map(lc=>`
+      <label class="bcsync-check-row">
+        <input type="checkbox" class="bcsync-chk" value="${lc.name.replace(/"/g,'&quot;')}" ${linked.includes(lc.name)?'checked':''}/>
+        <span class="bcsync-check-label-text">${lc.name}</span>
+      </label>`).join('');
+  }
+  openModal('bcsync');
+}
+
+function saveBudgetCatSync(){
+  const catId=document.getElementById('bcsync-cat-id').value;
+  const cat=(S.budgetCategories||[]).find(c=>c.id==catId);
+  if(!cat)return;
+  const checks=document.querySelectorAll('.bcsync-chk:checked');
+  cat.linkedCategories=Array.from(checks).map(c=>c.value);
+  const cm=S.currentMonths.income;
+  saveState();closeModal();renderBudget(cm.y,cm.m);
 }
 
 function openBudgetModal(id){
@@ -734,14 +792,70 @@ function toggleCalFoodSync(y,m){
   saveState();renderCalendar();
 }
 
+// ===== ASSET TOTAL → FUND CALC SYNC =====
+function syncFundCalcToAssets(){
+  if(!S.fundCalc||!S.fundCalc.assetLinked)return;
+  const total=getTotalAssets();
+  S.fundCalc.amount=total;
+  S.fundCalc.assetLinkedAt=Date.now();
+  saveState();
+  renderFundCalc();
+}
+
+function toggleAssetTotalLink(linked){
+  if(!S.fundCalc)S.fundCalc={amount:0,items:[],assetLinked:false,assetLinkedAt:null};
+  S.fundCalc.assetLinked=!!linked;
+  if(linked){
+    S.fundCalc.amount=getTotalAssets();
+    S.fundCalc.assetLinkedAt=Date.now();
+  } else {
+    S.fundCalc.assetLinkedAt=null;
+  }
+  saveState();renderFundCalc();
+}
+
 // ===== DASHBOARD =====
 // ===== FUND CALCULATOR =====
 function renderFundCalc(){
-  const fc=S.fundCalc||{amount:0,items:[]};
+  const fc=S.fundCalc||{amount:0,items:[],assetLinked:false};
+  const isLinked=!!fc.assetLinked;
+
+  // 총 자산 연동 상태 배지
+  const badgeEl=document.getElementById('fc-asset-linked-badge');
+  if(badgeEl)badgeEl.style.display=isLinked?'inline-flex':'none';
+
+  // 연동 토글 버튼 상태
+  const linkBtn=document.getElementById('fc-asset-link-btn');
+  if(linkBtn){
+    linkBtn.textContent=isLinked?'🔓 연동 해제':'🔗 총 자산 연동';
+    linkBtn.className='add-btn '+(isLinked?'fc-link-btn-active':'');
+  }
+
+  // 보유금액 입력창: 연동 시 비활성화
   const amtEl=document.getElementById('fc-amount-input');
-  if(amtEl&&document.activeElement!==amtEl)amtEl.value=fc.amount||'';
+  if(amtEl){
+    if(document.activeElement!==amtEl)amtEl.value=isLinked?getTotalAssets():(fc.amount||'');
+    amtEl.readOnly=isLinked;
+    amtEl.style.background=isLinked?'var(--green-light)':'';
+    amtEl.style.cursor=isLinked?'default':'';
+    amtEl.title=isLinked?'총 자산 연동 중 — 직접 편집 불가':'';
+  }
+
+  // 연동 시각 표시
+  const linkedTimeEl=document.getElementById('fc-linked-time');
+  if(linkedTimeEl){
+    if(isLinked&&fc.assetLinkedAt){
+      const d=new Date(fc.assetLinkedAt);
+      linkedTimeEl.textContent='마지막 반영: '+d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+      linkedTimeEl.style.display='block';
+    } else {
+      linkedTimeEl.style.display='none';
+    }
+  }
+
   const dispEl=document.getElementById('fc-amount-display');
-  if(dispEl)dispEl.textContent=fc.amount>0?'보유: '+fmt(fc.amount):'';
+  const shownAmt=isLinked?getTotalAssets():(fc.amount||0);
+  if(dispEl)dispEl.textContent=shownAmt>0?'보유: '+fmt(shownAmt):'';
   const listEl=document.getElementById('fc-items-list');
   if(listEl){
     if((fc.items||[]).length===0){
@@ -768,9 +882,10 @@ function renderFundCalc(){
 
 // 합계 표시만 갱신 (DOM 재렌더링 없음 — focus 유지)
 function _fcSummary(){
-  const fc=S.fundCalc||{amount:0,items:[]};
+  const fc=S.fundCalc||{amount:0,items:[],assetLinked:false};
   const totalUsed=(fc.items||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0);
-  const remaining=(parseFloat(fc.amount)||0)-totalUsed;
+  const baseAmt=fc.assetLinked?getTotalAssets():(parseFloat(fc.amount)||0);
+  const remaining=baseAmt-totalUsed;
   const over=remaining<0;
   const tuEl=document.getElementById('fc-total-used');
   if(tuEl)tuEl.textContent=fmt(totalUsed);
@@ -813,7 +928,8 @@ function previewFundAmount(val){
 }
 
 function setFundAmount(val){
-  if(!S.fundCalc)S.fundCalc={amount:0,items:[]};
+  if(!S.fundCalc)S.fundCalc={amount:0,items:[],assetLinked:false};
+  if(S.fundCalc.assetLinked)return; // 연동 중 직접 편집 차단
   S.fundCalc.amount=numInputParse(val);
   saveState();renderFundCalc();
 }
@@ -842,7 +958,7 @@ function updateFundItem(id,field,value){
 
 function resetFundCalc(){
   if(!confirm('자금 분배 계산기를 초기화하시겠어요?'))return;
-  S.fundCalc={amount:0,items:[]};
+  S.fundCalc={amount:0,items:[],assetLinked:false,assetLinkedAt:null};
   saveState();renderFundCalc();
 }
 
@@ -2222,6 +2338,7 @@ function saveAsset(){
   if(id){const a=S.assets.find(a=>a.id==id);if(a){a.name=name;a.amount=amount;a.category=category;}}
   else S.assets.push({id:genId(),name,amount,category});
   saveState();closeModal();renderAssets();renderDashboard();
+  syncFundCalcToAssets();
 }
 
 function getStockTypeFromModal(){
@@ -2328,12 +2445,12 @@ function deleteItem(type,id){
   if(type==='income'){const cm=S.currentMonths.income;getMonthData(cm.y,cm.m).income=getMonthData(cm.y,cm.m).income.filter(i=>i.id!=id);}
   else if(type==='fixed'){const cm=S.currentMonths.income;getMonthData(cm.y,cm.m).fixed=getMonthData(cm.y,cm.m).fixed.filter(i=>i.id!=id);}
   else if(type==='variable'){const cm=S.currentMonths.income;getMonthData(cm.y,cm.m).variable=getMonthData(cm.y,cm.m).variable.filter(i=>i.id!=id);}
-  else if(type==='asset'){S.assets=S.assets.filter(a=>a.id!=id);}
+  else if(type==='asset'){S.assets=S.assets.filter(a=>a.id!=id);if(S.fundCalc&&S.fundCalc.assetLinked){S.fundCalc.amount=getTotalAssets();S.fundCalc.assetLinkedAt=Date.now();}}
   else if(type==='stock'){S.stocks=S.stocks.filter(s=>s.id!=id);syncStockAsset();}
   saveState();renderAll();
 }
 
-function updateAssetAmount(id,val){const a=S.assets.find(a=>a.id==id);if(a)a.amount=numInputParse(val);saveState();renderAssets();renderDashboard();}
+function updateAssetAmount(id,val){const a=S.assets.find(a=>a.id==id);if(a)a.amount=numInputParse(val);saveState();renderAssets();renderDashboard();syncFundCalcToAssets();}
 function updateStockPrice(id,val){const st=S.stocks.find(s=>s.id==id);if(st)st.currentPrice=numInputParse(val);syncStockAsset();saveState();renderStocks();renderAssetStocks();renderDashboard();}
 function updateStockBuyAmount(id,val){const st=S.stocks.find(s=>s.id==id);if(st)st.buyAmount=numInputParse(val);syncStockAsset();saveState();renderAssetStocks();renderDashboard();}
 function updateStockCurrentAmount(id,val){const st=S.stocks.find(s=>s.id==id);if(st)st.currentAmount=numInputParse(val);syncStockAsset();saveState();renderStocks();renderAssetStocks();renderDashboard();}
@@ -3898,6 +4015,7 @@ window.App={
   changeMonth,changeCalYear,toggleDashSection,applyMonthTheme,
   openModal,closeModal,openVariableModal,
   openBudgetModal,saveBudgetCategory,deleteBudgetCategory,
+  openBudgetCatSyncModal,saveBudgetCatSync,
   openIncomeModal,openFixedModal,openDefaultMode,cancelDefaultMode,saveDefaultItems,deleteDefaultItems,saveIncome,saveFixed,saveVariable,saveCredit,openCreditModal,editCredit,saveAsset,saveStock,
   editItem,deleteItem,
   updateAssetAmount,updateStockPrice,updateStockBuyAmount,updateStockCurrentAmount,onStockTypeChange,renderAssetStocks,
@@ -3924,10 +4042,12 @@ window.App={
   renderFundCalc,setFundAmount,addFundItem,deleteFundItem,updateFundItem,
   previewFundItem,previewFundAmount,
   resetFundCalc,toggleAssetSelector,applyAssetSelection,
+  toggleAssetTotalLink,syncFundCalcToAssets,
   addLcatEntry,deleteLcatEntry,toggleLcatSavings,saveLcatName,toggleLcatPanel,
   openDeleteModal,confirmDeleteMonth,deleteMonthData,
   numInputFmt,numInputParse,
   _dmDragStart,_dmDragOver,_dmDragLeave,_dmDrop,_dmDragEnd,_dmTouchStart,_dmTouchMove,_dmTouchEnd,
+  renderAll,
 };
 
 // ===== INIT =====
