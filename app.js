@@ -1094,7 +1094,7 @@ function renderDashboard(){
 
   renderDashExpand('income',getMonthData(cm.y,cm.m).income.map(i=>({name:i.name,cat:i.category,amount:i.amount,color:'green'})));
   renderDashExpand('fixed',getMonthData(cm.y,cm.m).fixed.map(i=>({name:i.name,cat:i.category,amount:i.amount,color:'red'})));
-  renderDashExpand('variable',getEffectiveVariable(cm.y,cm.m).map(i=>({name:i.name,cat:i.category,amount:i.amount,color:'orange'})));
+  renderDashExpand('variable',getEffectiveVariable(cm.y,cm.m).slice().sort((a,b)=>(parseFloat(b.amount)||0)-(parseFloat(a.amount)||0)).map(i=>({name:i.name,cat:i.category,amount:i.amount,color:'orange'})));
   renderDashAssetExpand();
 
   renderDashExpand('stock',S.stocks.map(st=>{
@@ -1379,13 +1379,17 @@ function renderIncome(){
   }).join('')||(data.fixed.length===0&&_defaultMode?'<div style="font-size:12px;color:var(--text-sub);padding:8px 0;">고정 지출 항목이 없습니다</div>':'');
 
   // Variable list
-  const effectiveVars=getEffectiveVariable(cm.y,cm.m);
+  const effectiveVars=getEffectiveVariable(cm.y,cm.m).slice().sort((a,b)=>(parseFloat(b.amount)||0)-(parseFloat(a.amount)||0));
 
   let varHTML=effectiveVars.map(item=>{
     const isAuto=item.autoFromLedger||item.autoFromCredit;
     const showCat=item.name!==item.category;
+    const catJSON=JSON.stringify(item.name);
     return `
-      <div class="expense-item">
+      <div class="expense-item var-hoverable"
+           onmouseenter="App.showVarPreview(this,${catJSON},${item.amount})"
+           onmouseleave="App.hideVarPreview(180)"
+           onclick="if('ontouchstart' in window||window.innerWidth<=768)App.showVarPreview(this,${catJSON},${item.amount})">
         <div class="item-left">
           <span class="item-name">${item.name}</span>
           ${showCat?`<span class="item-cat">${item.category}</span>`:''}
@@ -1393,8 +1397,8 @@ function renderIncome(){
         <div class="item-right">
           <span class="item-amount orange">${fmt(item.amount)}</span>
           ${!isAuto?`<div class="item-actions">
-            <button class="icon-btn" onclick="App.editItem('variable',${item.id})">✏️</button>
-            <button class="icon-btn" onclick="App.deleteItem('variable',${item.id})">🗑️</button>
+            <button class="icon-btn" onclick="event.stopPropagation();App.editItem('variable',${item.id})">✏️</button>
+            <button class="icon-btn" onclick="event.stopPropagation();App.deleteItem('variable',${item.id})">🗑️</button>
           </div>`:''}
         </div>
       </div>`;
@@ -3903,6 +3907,89 @@ function switchTab(tab){
 }
 
 // ===== APP EXPORT =====
+// ===== VARIABLE EXPENSE PREVIEW PANEL =====
+let _varPreviewTimer=null;
+let _varPreviewCat=null;
+
+function _ensureVarPanel(){
+  if(!document.getElementById('var-preview-panel')){
+    const p=document.createElement('div');
+    p.id='var-preview-panel';
+    p.className='var-preview-panel';
+    document.body.appendChild(p);
+  }
+}
+
+function showVarPreview(el,category,total){
+  _ensureVarPanel();
+  clearTimeout(_varPreviewTimer);
+  const panel=document.getElementById('var-preview-panel');
+  if(!panel)return;
+  if(_varPreviewCat===category&&panel.classList.contains('visible')){
+    panel.classList.remove('visible');_varPreviewCat=null;return;
+  }
+  _varPreviewCat=category;
+  const cm=S.currentMonths.income;
+  const key=mkey(cm.y,cm.m);
+  const entries=(S.ledger[key]||[])
+    .filter(e=>e.type==='expense'&&e.category===category)
+    .sort((a,b)=>(b.date||'').localeCompare(a.date||''))
+    .slice(0,5);
+  const listHTML=entries.length===0
+    ?'<div style="color:var(--text-sub);font-size:12px;padding:8px 4px;text-align:center;">내역 없음</div>'
+    :entries.map(e=>{
+      const dp=(e.date||'').split('-');
+      const dateStr=dp.length===3?dp[1]+'/'+dp[2]:(e.date||'');
+      const tags=(e.tags||[]).filter(t=>t).map(t=>`<span class="vpp-tag">${t}</span>`).join('');
+      return `<div class="vpp-item">
+        <div class="vpp-left">
+          <span class="vpp-memo">${e.memo||'(메모 없음)'}</span>
+          ${tags?`<div class="vpp-tags">${tags}</div>`:''}
+        </div>
+        <div class="vpp-right">
+          <span class="vpp-amount">-${Math.round(e.amount).toLocaleString('ko-KR')}원</span>
+          <span class="vpp-date">${dateStr}</span>
+        </div>
+      </div>`;
+    }).join('');
+  panel.innerHTML=`
+    <div class="vpp-header">
+      <span class="vpp-title">${category} 최근 지출</span>
+      <span class="vpp-link" onclick="App.goToLedger()">전체 보기 ›</span>
+    </div>
+    <div class="vpp-list">${listHTML}</div>
+    <div class="vpp-footer">이번 달 <strong>${Math.round(total).toLocaleString('ko-KR')}원</strong></div>
+  `;
+  panel.onmouseenter=()=>{clearTimeout(_varPreviewTimer);};
+  panel.onmouseleave=()=>{hideVarPreview(150);};
+  const rect=el.getBoundingClientRect();
+  const panelW=280,margin=10;
+  let left=rect.right+margin;
+  let top=rect.top;
+  if(left+panelW>window.innerWidth-margin)left=rect.left-panelW-margin;
+  if(left<margin)left=margin;
+  panel.style.left=left+'px';
+  panel.style.top=top+'px';
+  panel.classList.add('visible');
+  requestAnimationFrame(()=>{
+    const ph=panel.offsetHeight;
+    if(top+ph>window.innerHeight-margin)
+      panel.style.top=Math.max(margin,window.innerHeight-ph-margin)+'px';
+  });
+}
+
+function hideVarPreview(delay){
+  _varPreviewTimer=setTimeout(()=>{
+    const panel=document.getElementById('var-preview-panel');
+    if(panel){panel.classList.remove('visible');_varPreviewCat=null;}
+  },delay!=null?delay:150);
+}
+
+function goToLedger(){
+  hideVarPreview(0);
+  document.querySelector('.nav-item[data-tab="ledger"]')?.click();
+}
+
 window.App={
   changeMonth,changeCalYear,toggleDashSection,applyMonthTheme,
   openModal,closeModal,openVariableModal,
@@ -3925,6 +4012,7 @@ window.App={
   openCloseMonthModal,closeMonth,reopenMonth,
   fetchStockPrices,
   downloadMonthlyReport,
+  showVarPreview,hideVarPreview,goToLedger,
   toggleSidebar,closeSidebar,
   editAuto,saveAuto,deleteAuto,toggleAuto,
   openAssetModal,promptAddAssetCategory,openStockModal,
