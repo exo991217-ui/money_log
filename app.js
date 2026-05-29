@@ -1112,7 +1112,7 @@ function renderDashExpand(section,items){
     ?'<div style="color:var(--text-sub);font-size:12px;padding:8px 0;">항목 없음</div>'
     :items.map(item=>`
       <div class="dash-expand-item">
-        <div class="dash-expand-name">${item.name}<span class="dash-expand-cat">${item.cat}</span></div>
+        <div class="dash-expand-name">${item.name}${item.cat&&item.cat!==item.name?`<span class="dash-expand-cat">${item.cat}</span>`:''}</div>
         <div class="dash-expand-amount ${item.color}">${fmt(item.amount)}</div>
       </div>`).join('');
 }
@@ -1382,28 +1382,20 @@ function renderIncome(){
   const effectiveVars=getEffectiveVariable(cm.y,cm.m);
 
   let varHTML=effectiveVars.map(item=>{
-    if(item.autoFromLedger){
-      return `
-        <div class="expense-item auto-item">
-          <div class="item-left">
-            <span class="item-name">${item.name}<span class="auto-tag ledger">가계부</span></span>
-            <span class="item-cat">${item.category}</span>
-          </div>
-          <div class="item-right"><span class="item-amount orange">${fmt(item.amount)}</span></div>
-        </div>`;
-    }
+    const isAuto=item.autoFromLedger||item.autoFromCredit;
+    const showCat=item.name!==item.category;
     return `
       <div class="expense-item">
         <div class="item-left">
           <span class="item-name">${item.name}</span>
-          <span class="item-cat">${item.category}</span>
+          ${showCat?`<span class="item-cat">${item.category}</span>`:''}
         </div>
         <div class="item-right">
           <span class="item-amount orange">${fmt(item.amount)}</span>
-          <div class="item-actions">
+          ${!isAuto?`<div class="item-actions">
             <button class="icon-btn" onclick="App.editItem('variable',${item.id})">✏️</button>
             <button class="icon-btn" onclick="App.deleteItem('variable',${item.id})">🗑️</button>
-          </div>
+          </div>`:''}
         </div>
       </div>`;
   }).join('');
