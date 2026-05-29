@@ -1384,10 +1384,11 @@ function renderIncome(){
   let varHTML=effectiveVars.map(item=>{
     const isAuto=item.autoFromLedger||item.autoFromCredit;
     const showCat=item.name!==item.category;
-    const catJSON=JSON.stringify(item.name);
+    const catEsc=item.name.replace(/"/g,'&quot;');
     return `
       <div class="expense-item var-hoverable"
-           onclick='App.showVarPreview(this,${catJSON},${item.amount})'>
+           data-vcat="${catEsc}" data-vtotal="${item.amount}"
+           onclick="App.showVarPreview(this)">
         <div class="item-left">
           <span class="item-name">${item.name}</span>
           ${showCat?`<span class="item-cat">${item.category}</span>`:''}
@@ -3905,67 +3906,48 @@ function switchTab(tab){
 }
 
 // ===== APP EXPORT =====
-// ===== VARIABLE EXPENSE PREVIEW PANEL =====
-let _varPreviewTimer=null;
+// ===== VARIABLE EXPENSE INLINE PREVIEW =====
 let _varPreviewCat=null;
 let _varActiveEl=null;
 
-function _ensureVarPanel(){
-  if(!document.getElementById('var-preview-panel')){
-    const p=document.createElement('div');
-    p.id='var-preview-panel';
-    p.className='var-preview-panel';
-    document.body.appendChild(p);
-  }
-}
-
 function _clearVarActive(){
   if(_varActiveEl){
-    _varActiveEl.classList.remove('var-item-active');
     _varActiveEl.style.border='';
     _varActiveEl.style.borderRadius='';
     _varActiveEl.style.background='';
-    _varActiveEl.style.paddingLeft='';
-    _varActiveEl.style.paddingRight='';
     _varActiveEl=null;
   }
+  document.querySelectorAll('.var-inline-panel').forEach(p=>p.remove());
+  _varPreviewCat=null;
 }
 
-function showVarPreview(el,category,total){
-  _ensureVarPanel();
-  clearTimeout(_varPreviewTimer);
-  const panel=document.getElementById('var-preview-panel');
-  if(!panel)return;
+function showVarPreview(el){
+  const category=el.dataset.vcat;
+  const total=parseFloat(el.dataset.vtotal)||0;
+  if(!category)return;
   // 같은 항목 다시 클릭 → 닫기
-  if(_varPreviewCat===category&&panel.classList.contains('visible')){
-    panel.classList.remove('visible');
-    _varPreviewCat=null;
+  if(_varPreviewCat===category){
     _clearVarActive();
     return;
   }
-  // 이전 활성 항목 테두리 제거 후 새 항목 활성화
+  // 이전 것 닫고 새 항목 열기
   _clearVarActive();
   _varActiveEl=el;
   _varPreviewCat=category;
-  // 현재 달 테마 컬러 가져오기
   const cm=S.currentMonths.income;
   const theme=getMonthTheme(cm.m);
-  const themeColor=theme.color;
-  const themeBorder=theme.border;
-  const themeLight=theme.light;
-  // 활성 항목에 테마 테두리 적용
-  el.style.border='1.5px solid '+themeBorder;
+  // 활성 항목 스타일
+  el.style.border='1.5px solid '+theme.border;
   el.style.borderRadius='10px';
-  el.style.background=themeLight;
-  el.style.paddingLeft='7px';
-  el.style.paddingRight='7px';
+  el.style.background=theme.light;
+  // 가계부 내역 조회
   const key=mkey(cm.y,cm.m);
   const entries=(S.ledger[key]||[])
     .filter(e=>e.type==='expense'&&e.category===category)
     .sort((a,b)=>(b.date||'').localeCompare(a.date||''))
     .slice(0,5);
   const listHTML=entries.length===0
-    ?'<div style="color:var(--text-sub);font-size:12px;padding:8px 4px;text-align:center;">내역 없음</div>'
+    ?'<div class="vpp-empty">내역 없음</div>'
     :entries.map(e=>{
       const dp=(e.date||'').split('-');
       const dateStr=dp.length===3?dp[1]+'/'+dp[2]:(e.date||'');
@@ -3982,42 +3964,22 @@ function showVarPreview(el,category,total){
       </div>`;
     }).join('');
   const catJSON=JSON.stringify(category);
+  const panel=document.createElement('div');
+  panel.className='var-inline-panel';
   panel.innerHTML=`
-    <div class="vpp-header">
-      <span class="vpp-title">${category} 최근 지출</span>
-      <span class="vpp-link" style="color:${themeColor};" onclick="App.goToLedger(${catJSON})">전체 보기 ›</span>
-    </div>
-    <div class="vpp-list">${listHTML}</div>
-    <div class="vpp-footer">이번 달 <strong style="color:${themeColor};">${Math.round(total).toLocaleString('ko-KR')}원</strong></div>
-  `;
-  // 패널 테두리에 테마 컬러 적용
-  panel.style.borderColor=themeBorder;
-  const rect=el.getBoundingClientRect();
-  const panelW=280,margin=10;
-  let left=rect.right+margin;
-  let top=rect.top;
-  if(left+panelW>window.innerWidth-margin)left=rect.left-panelW-margin;
-  if(left<margin)left=margin;
-  panel.style.left=left+'px';
-  panel.style.top=top+'px';
-  panel.classList.add('visible');
-  requestAnimationFrame(()=>{
-    const ph=panel.offsetHeight;
-    if(top+ph>window.innerHeight-margin)
-      panel.style.top=Math.max(margin,window.innerHeight-ph-margin)+'px';
-  });
-}
-
-function hideVarPreview(delay){
-  _varPreviewTimer=setTimeout(()=>{
-    const panel=document.getElementById('var-preview-panel');
-    if(panel){panel.classList.remove('visible');_varPreviewCat=null;}
-    _clearVarActive();
-  },delay!=null?delay:150);
+    <div class="vpp-inner" style="border-color:${theme.border};">
+      <div class="vpp-list">${listHTML}</div>
+      <div class="vpp-footer">
+        <span>이번 달 <strong style="color:${theme.color};">${Math.round(total).toLocaleString('ko-KR')}원</strong></span>
+        <span class="vpp-link" style="color:${theme.color};" onclick="event.stopPropagation();App.goToLedger(${catJSON})">전체 보기 ›</span>
+      </div>
+    </div>`;
+  el.after(panel);
+  requestAnimationFrame(()=>panel.classList.add('open'));
 }
 
 function goToLedger(cat){
-  hideVarPreview(0);
+  _clearVarActive();
   if(cat){S.ledgerFilter=cat;}
   document.querySelector('.nav-item[data-tab="ledger"]')?.click();
 }
@@ -4044,7 +4006,7 @@ window.App={
   openCloseMonthModal,closeMonth,reopenMonth,
   fetchStockPrices,
   downloadMonthlyReport,
-  showVarPreview,hideVarPreview,goToLedger,
+  showVarPreview,goToLedger,
   toggleSidebar,closeSidebar,
   editAuto,saveAuto,deleteAuto,toggleAuto,
   openAssetModal,promptAddAssetCategory,openStockModal,
