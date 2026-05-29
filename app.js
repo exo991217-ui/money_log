@@ -468,12 +468,18 @@ function getEffectiveVariable(y,m){
     .filter(cat=>!manualCats.has(cat)&&!creditCats.has(cat)&&ledgerSums[cat]>0)
     .map(cat=>({id:'led_'+cat,name:cat,category:cat,amount:ledgerSums[cat],autoFromLedger:true}));
 
-  // 카테고리 기준 중복 제거: autoFromLedger(가계부연동) 항목 우선 유지
+  // 카테고리 기준 전체 중복 제거 (manual → ledger → credit 순 우선순위)
   const seenCats=new Set();
   const deduped=[];
+  // 1순위: manual 중 가계부연동
   manual.forEach(item=>{if(item.autoFromLedger&&!seenCats.has(item.category)){seenCats.add(item.category);deduped.push(item);}});
+  // 2순위: manual 중 일반 수동 입력
   manual.forEach(item=>{if(!item.autoFromLedger&&!seenCats.has(item.category)){seenCats.add(item.category);deduped.push(item);}});
-  return[...deduped,...ledgerItems,...creditItems];
+  // 3순위: 가계부 전용 항목 (이미 본 카테고리 제외)
+  const filteredLedger=ledgerItems.filter(item=>{if(seenCats.has(item.category))return false;seenCats.add(item.category);return true;});
+  // 4순위: 신용카드 자동 항목 (이미 본 카테고리 제외)
+  const filteredCredit=creditItems.filter(item=>{if(seenCats.has(item.category))return false;seenCats.add(item.category);return true;});
+  return[...deduped,...filteredLedger,...filteredCredit];
 }
 
 function getCardRate(cardId,months){
