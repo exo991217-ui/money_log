@@ -1387,7 +1387,7 @@ function renderIncome(){
     const catJSON=JSON.stringify(item.name);
     return `
       <div class="expense-item var-hoverable"
-           onclick="App.showVarPreview(this,${catJSON},${item.amount})">
+           onclick='App.showVarPreview(this,${catJSON},${item.amount})'>
         <div class="item-left">
           <span class="item-name">${item.name}</span>
           ${showCat?`<span class="item-cat">${item.category}</span>`:''}
