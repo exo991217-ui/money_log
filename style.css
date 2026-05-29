@@ -1163,12 +1163,17 @@ body { background: var(--t-bg) !important; }
 .budget-link-text-btn{
   font-size:10px;font-weight:600;
   padding:2px 7px;border-radius:6px;
-  background:#EDF7FF;color:#2980B9;
-  border:1px solid #B3D7F5;
+  background:#F0FFF4;color:#27AE60;
+  border:1.5px solid #A9DFBF;
   cursor:pointer;white-space:nowrap;flex-shrink:0;
-  transition:background .12s;
+  transition:background .12s,color .12s,border-color .12s;
 }
-.budget-link-text-btn:hover{background:#D0EEFF;}
+.budget-link-text-btn:hover{background:#C8EDD9;}
+.budget-link-text-btn.linked{
+  background:#FFF5F5;color:#E74C3C;
+  border-color:#F5B7B1;
+}
+.budget-link-text-btn.linked:hover{background:#FADBD8;}
 
 /* ===== 예산 카테고리 연동 모달 ===== */
 .bcsync-body{
