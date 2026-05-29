@@ -691,23 +691,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
   border-radius: 8px;
 }
 
-/* Budget sync badge per-category */
-.budget-sync-badge {
-  display: inline-block;
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 6px;
-  font-weight: 700;
-  margin-left: 4px;
-}
-.budget-sync-badge.synced {
-  background: #E3FBF0;
-  color: #43C98A;
-}
-.budget-sync-badge.unsynced {
-  background: #FFF3E0;
-  color: #FFB347;
-}
+
 
 
 /* ===== MONTHLY THEME VARIABLES ===== */
