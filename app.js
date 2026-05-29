@@ -3954,8 +3954,8 @@ function showVarPreview(el){
       const tags=(e.tags||[]).filter(t=>t).map(t=>`<span class="vpp-tag">${t}</span>`).join('');
       return `<div class="vpp-item">
         <div class="vpp-left">
+          ${tags}
           <span class="vpp-memo">${e.memo||'(메모 없음)'}</span>
-          ${tags?`<div class="vpp-tags">${tags}</div>`:''}
         </div>
         <div class="vpp-right">
           <span class="vpp-amount">-${Math.round(e.amount).toLocaleString('ko-KR')}원</span>
@@ -3963,22 +3963,21 @@ function showVarPreview(el){
         </div>
       </div>`;
     }).join('');
-  const catJSON=JSON.stringify(category);
   const panel=document.createElement('div');
   panel.className='var-inline-panel';
   panel.innerHTML=`
-    <div class="vpp-inner" style="border-color:${theme.border};">
+    <div class="vpp-inner" style="border-color:${theme.border};background:${theme.light};">
       <div class="vpp-list">${listHTML}</div>
       <div class="vpp-footer">
-        <span>이번 달 <strong style="color:${theme.color};">${Math.round(total).toLocaleString('ko-KR')}원</strong></span>
-        <span class="vpp-link" style="color:${theme.color};" onclick="event.stopPropagation();App.goToLedger(${catJSON})">전체 보기 ›</span>
+        <span class="vpp-link" style="color:${theme.color};" onclick="event.stopPropagation();App.goToLedger()">전체 보기 ›</span>
       </div>
     </div>`;
   el.after(panel);
   requestAnimationFrame(()=>panel.classList.add('open'));
 }
 
-function goToLedger(cat){
+function goToLedger(){
+  const cat=_varPreviewCat;
   _clearVarActive();
   if(cat){S.ledgerFilter=cat;}
   document.querySelector('.nav-item[data-tab="ledger"]')?.click();
