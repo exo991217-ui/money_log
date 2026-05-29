@@ -468,7 +468,16 @@ function getEffectiveVariable(y,m){
     .filter(cat=>!manualCats.has(cat)&&!creditCats.has(cat)&&ledgerSums[cat]>0)
     .map(cat=>({id:'led_'+cat,name:cat,category:cat,amount:ledgerSums[cat],autoFromLedger:true}));
 
-  return[...manual,...ledgerItems,...creditItems];
+  // 같은 카테고리 autoFromLedger 중복 제거
+  const seenLedgerCats=new Set();
+  const deduped=manual.filter(item=>{
+    if(item.autoFromLedger){
+      if(seenLedgerCats.has(item.category))return false;
+      seenLedgerCats.add(item.category);
+    }
+    return true;
+  });
+  return[...deduped,...ledgerItems,...creditItems];
 }
 
 function getCardRate(cardId,months){
@@ -526,18 +535,18 @@ function renderAll(){
 // ===== MONTHLY THEME COLORS =====
 function getMonthTheme(m){
   const themes=[
-    {gradient:'linear-gradient(135deg,#4FC3F7,#0288D1)',color:'#29B6F6'}, // 1월
-    {gradient:'linear-gradient(135deg,#CE93D8,#8E24AA)',color:'#AB47BC'}, // 2월
-    {gradient:'linear-gradient(135deg,#81C784,#388E3C)',color:'#66BB6A'}, // 3월
-    {gradient:'linear-gradient(135deg,#F48FB1,#C2185B)',color:'#EC407A'}, // 4월
-    {gradient:'linear-gradient(135deg,#A5D6A7,#2E7D32)',color:'#4CAF50'}, // 5월
-    {gradient:'linear-gradient(135deg,#FFD54F,#F57F17)',color:'#FFB300'}, // 6월
-    {gradient:'linear-gradient(135deg,#4DD0E1,#00838F)',color:'#00ACC1'}, // 7월
-    {gradient:'linear-gradient(135deg,#FF8A65,#BF360C)',color:'#FF7043'}, // 8월
-    {gradient:'linear-gradient(135deg,#FFCA28,#E65100)',color:'#FFA000'}, // 9월
-    {gradient:'linear-gradient(135deg,#EF9A9A,#B71C1C)',color:'#EF5350'}, // 10월
-    {gradient:'linear-gradient(135deg,#9575CD,#4527A0)',color:'#7E57C2'}, // 11월
-    {gradient:'linear-gradient(135deg,#EF5350,#880E4F)',color:'#E53935'}, // 12월
+    {gradient:'linear-gradient(135deg,#4FC3F7,#0288D1)',color:'#29B6F6',light:'rgba(79,195,247,0.13)',border:'rgba(79,195,247,0.4)'}, // 1월
+    {gradient:'linear-gradient(135deg,#CE93D8,#8E24AA)',color:'#AB47BC',light:'rgba(206,147,216,0.13)',border:'rgba(206,147,216,0.4)'}, // 2월
+    {gradient:'linear-gradient(135deg,#81C784,#388E3C)',color:'#66BB6A',light:'rgba(129,199,132,0.13)',border:'rgba(129,199,132,0.4)'}, // 3월
+    {gradient:'linear-gradient(135deg,#F48FB1,#C2185B)',color:'#EC407A',light:'rgba(244,143,177,0.13)',border:'rgba(244,143,177,0.4)'}, // 4월
+    {gradient:'linear-gradient(135deg,#A5D6A7,#2E7D32)',color:'#4CAF50',light:'rgba(165,214,167,0.13)',border:'rgba(165,214,167,0.4)'}, // 5월
+    {gradient:'linear-gradient(135deg,#FFD54F,#F57F17)',color:'#FFB300',light:'rgba(255,213,79,0.13)',border:'rgba(255,213,79,0.4)'}, // 6월
+    {gradient:'linear-gradient(135deg,#4DD0E1,#00838F)',color:'#00ACC1',light:'rgba(77,208,225,0.13)',border:'rgba(77,208,225,0.4)'}, // 7월
+    {gradient:'linear-gradient(135deg,#FF8A65,#BF360C)',color:'#FF7043',light:'rgba(255,138,101,0.13)',border:'rgba(255,138,101,0.4)'}, // 8월
+    {gradient:'linear-gradient(135deg,#FFCA28,#E65100)',color:'#FFA000',light:'rgba(255,202,40,0.13)',border:'rgba(255,202,40,0.4)'}, // 9월
+    {gradient:'linear-gradient(135deg,#EF9A9A,#B71C1C)',color:'#EF5350',light:'rgba(239,154,154,0.13)',border:'rgba(239,154,154,0.4)'}, // 10월
+    {gradient:'linear-gradient(135deg,#9575CD,#4527A0)',color:'#7E57C2',light:'rgba(149,117,205,0.13)',border:'rgba(149,117,205,0.4)'}, // 11월
+    {gradient:'linear-gradient(135deg,#EF5350,#880E4F)',color:'#E53935',light:'rgba(239,83,80,0.13)',border:'rgba(239,83,80,0.4)'}, // 12월
   ];
   return themes[Math.max(0,Math.min(11,(m||1)-1))];
 }
@@ -1402,6 +1411,9 @@ function renderIncome(){
 // ===== CREDIT CARD =====
 function renderCredit(){
   const cm=S.currentMonths.credit;
+  const ct=getMonthTheme(cm.m);
+  const creditBanner=document.querySelector('.credit-banner');
+  if(creditBanner)creditBanner.style.background=ct.gradient;
   document.getElementById('credit-month-label').textContent=cm.y+'년 '+cm.m+'월';
   document.getElementById('credit-month-text').textContent=cm.y+'년 '+cm.m+'월 납부액';
   let monthTotal=0;
@@ -1883,6 +1895,9 @@ let currentFoodPanel=null;
 
 function renderFood(){
   const cm=S.currentMonths.food;
+  const ft=getMonthTheme(cm.m);
+  const summaryBar=document.querySelector('.food-summary-bar');
+  if(summaryBar){summaryBar.style.background=ft.light;summaryBar.style.borderColor=ft.border;}
   document.getElementById('food-month-label').textContent=cm.y+'년 '+cm.m+'월';
   const key=mkey(cm.y,cm.m);
   const directSetting=S.foodDirectSet[key]||{direct:false,amount:0};
@@ -1913,11 +1928,11 @@ function renderFood(){
   const rem=(firstDay+daysInMonth)%7;
   if(rem>0)for(let i=0;i<7-rem;i++)cells+='<div class="food-day empty"></div>';
   document.getElementById('food-calendar').innerHTML=`
-    <div class="food-cal-header">
+    <div class="food-cal-header" style="background:${ft.light};">
       ${dowLabels.map((d,i)=>`<div class="food-cal-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`).join('')}
     </div>
     <div class="food-cal-grid">${cells}</div>
-    <div style="padding:14px 18px;background:var(--green-light);border-top:1px solid var(--border);font-size:13px;font-weight:700;text-align:right;color:var(--green);">총 ${fmt(foodTotal)}</div>`;
+    <div style="padding:14px 18px;background:${ft.light};border-top:1.5px solid ${ft.border};font-size:13px;font-weight:700;text-align:right;color:${ft.color};">총 ${fmt(foodTotal)}</div>`;
 
   // Re-render panel if one was open
   if(currentFoodPanel!==null){
