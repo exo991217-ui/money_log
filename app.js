@@ -2807,16 +2807,27 @@ function renderLedger(){
   const filterBar=document.getElementById('ledger-filter-bar');
   if(filterBar){
     const creditEntries=entries.filter(e=>e.creditAutoId);
-    filterBar.innerHTML=[
-      `<button class="ledger-filter-chip ${!filter?'active':''}" onclick="App.setLedgerFilter(null)">전체 (${entries.length})</button>`,
+    const isFiltered=!!(filter);
+    const activeLabel=filter==='__credit__'?'💳 신용카드만':filter;
+    const chipItems=[
+      `<button class="ledger-filter-chip ${!filter?'active':''}" onclick="App.setLedgerFilter(null);App._closeLedgerFilterDropdown()">전체 (${entries.length})</button>`,
       ...cats.map(c=>{
         const cnt=entries.filter(e=>e.category===c).length;
         const cc=getCategoryColor(c);
         const isActive=filter===c;
-        return `<button class="ledger-filter-chip ${isActive?'active':''}" style="--chip-strip:${cc.strip};--chip-bg:${cc.bg};--chip-color:${cc.color};" onclick="App.setLedgerFilter('${c}')">${c} (${cnt})</button>`;
+        return `<button class="ledger-filter-chip ${isActive?'active':''}" style="--chip-strip:${cc.strip};--chip-bg:${cc.bg};--chip-color:${cc.color};" onclick="App.setLedgerFilter('${c}');App._closeLedgerFilterDropdown()">${c} (${cnt})</button>`;
       }),
-      creditEntries.length>0?`<button class="ledger-filter-chip ledger-filter-credit ${filter==='__credit__'?'active':''}" onclick="App.setLedgerFilter(S.ledgerFilter==='__credit__'?null:'__credit__')">💳 신용카드만 (${creditEntries.length})</button>`:''
+      creditEntries.length>0?`<button class="ledger-filter-chip ledger-filter-credit ${filter==='__credit__'?'active':''}" onclick="App.setLedgerFilter(S.ledgerFilter==='__credit__'?null:'__credit__');App._closeLedgerFilterDropdown()">💳 신용카드만 (${creditEntries.length})</button>`:''
     ].join('');
+    filterBar.innerHTML=`
+      <div class="ledger-filter-wrap">
+        <button class="ledger-filter-icon-btn ${isFiltered?'active':''}" onclick="App._toggleLedgerFilterDropdown()" title="카테고리 필터">
+          🔽 필터${isFiltered?`<span class="ledger-filter-active-dot"></span>`:''}
+        </button>
+        <div class="ledger-filter-dropdown" id="ledger-filter-dropdown" style="display:none;">${chipItems}</div>
+      </div>
+      ${isFiltered?`<span class="ledger-filter-active-label">${activeLabel}</span>`:''}
+    `;
   }
   // Tag filter bar
   const allTags=[...new Set(entries.flatMap(e=>e.tags||[]))];
@@ -2842,7 +2853,11 @@ function renderLedger(){
     listEl.innerHTML=`<div class="ledger-empty"><div>📒</div><div>내역이 없어요</div><div>위 빠른 입력으로 시작하세요!</div></div>`;return;
   }
   const byDate={};
-  filtered.slice().sort((a,b)=>b.date.localeCompare(a.date)).forEach(e=>{
+  filtered.slice().sort((a,b)=>{
+    const dc=b.date.localeCompare(a.date);
+    if(dc!==0)return dc;
+    return (b.id||0)-(a.id||0);
+  }).forEach(e=>{
     if(!byDate[e.date])byDate[e.date]=[];byDate[e.date].push(e);
   });
   const dow=['일','월','화','수','목','금','토'];
@@ -4001,6 +4016,14 @@ window.App={
   fetchStockPrices,
   downloadMonthlyReport,
   showVarPreview,goToLedger,
+  _toggleLedgerFilterDropdown(){
+    const dd=document.getElementById('ledger-filter-dropdown');
+    if(dd)dd.style.display=dd.style.display==='none'?'flex':'none';
+  },
+  _closeLedgerFilterDropdown(){
+    const dd=document.getElementById('ledger-filter-dropdown');
+    if(dd)dd.style.display='none';
+  },
   toggleSidebar,closeSidebar,
   editAuto,saveAuto,deleteAuto,toggleAuto,
   openAssetModal,promptAddAssetCategory,openStockModal,
