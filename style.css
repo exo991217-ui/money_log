@@ -380,12 +380,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-main);min-hei
 /* 필터 드롭다운 */
 .ledger-filter-wrap{position:relative;display:inline-block;}
 .ledger-filter-icon-btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:3px;
-  width:36px;height:36px;border-radius:10px;
-  border:1.5px solid var(--border);
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;border-radius:10px;
+  border:1.5px solid #DDD;
   background:white;cursor:pointer;
-  color:var(--text-sub);transition:all .15s;
-  flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.06);
+  color:#6B7280;transition:all .15s;
+  flex-shrink:0;box-shadow:0 1px 6px rgba(0,0,0,.08);
 }
 .ledger-filter-icon-btn.active{border-color:#A29BFE;background:var(--purple-light,#F0EBFF);color:#5E4BC4;}
 .ledger-filter-icon-btn:hover{border-color:#A29BFE;background:var(--purple-light,#F0EBFF);color:#5E4BC4;}
