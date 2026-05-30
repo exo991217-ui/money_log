@@ -2822,7 +2822,7 @@ function renderLedger(){
     filterBar.innerHTML=`
       <div class="ledger-filter-wrap">
         <button class="ledger-filter-icon-btn ${isFiltered?'active':''}" onclick="App._toggleLedgerFilterDropdown()" title="카테고리 필터">
-          🔽 필터${isFiltered?`<span class="ledger-filter-active-dot"></span>`:''}
+          🔽${isFiltered?`<span class="ledger-filter-active-dot"></span>`:''}
         </button>
         <div class="ledger-filter-dropdown" id="ledger-filter-dropdown" style="display:none;">${chipItems}</div>
       </div>
